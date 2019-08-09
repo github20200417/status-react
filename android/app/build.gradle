@@ -1,7 +1,5 @@
 apply plugin: "com.android.application"
 
-apply from: project(':react-native-config').projectDir.getPath() + "/dotenv.gradle"
-
 import com.android.build.OutputFile
 import com.sun.org.apache.xalan.internal.xsltc.compiler.Copy
 
@@ -94,7 +92,10 @@ project.ext.react = [
 //     exclude group: 'com.facebook.react', module: 'react-native'
 // }
 
-apply from: "../../node_modules/react-native/react.gradle"
+if (project.gradle.startParameter.taskNames != ["clean"]) {
+  apply from: project(':react-native-config').projectDir.getPath() + "/dotenv.gradle"
+  apply from: project(':react-native-config').projectDir.getPath() + "/react.gradle"
+}
 
 /**
  * Run Proguard to shrink the Java bytecode in release builds.

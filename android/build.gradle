@@ -42,6 +42,10 @@ subprojects {
 
 allprojects {
     beforeEvaluate {
+      /* We don't need this check if we are just running clean */
+      if (project.gradle.startParameter.taskNames == ["clean"]) {
+        return
+      }
       if (System.env.STATUS_GO_ANDROID_LIBDIR == null || System.env.STATUS_GO_ANDROID_LIBDIR == "") {
         throw new GradleException('STATUS_GO_ANDROID_LIBDIR environment variable is not valid!')
       }
