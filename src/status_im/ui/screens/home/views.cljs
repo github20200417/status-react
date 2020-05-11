@@ -15,6 +15,7 @@
             [quo.core :as quo]
             [status-im.ui.components.search-input.view :as search-input]
             [cljs-bean.core :as bean]
+            [status-im.ui.components.invite.views :as invite]
             [status-im.ui.components.topbar :as topbar])
   (:require-macros [status-im.utils.views :as views]))
 
@@ -60,12 +61,10 @@
        :on-press            #(re-frame/dispatch [:multiaccounts.ui/hide-home-tooltip])
        :accessibility-label :hide-home-button}
       [icons/icon :main-icons/close-circle {:color colors/gray}]]]]
-   [react/i18n-text {:style styles/no-chats-text :key :chat-and-transact}]
-   [react/view {:align-items :center :margin-top 16}
-    [quo/button {:on-press            #(list-selection/open-share {:message (i18n/label :t/get-status-at)})
-                 :accessibility-label :invite-friends-button}
-     (i18n/label :t/invite-friends)]]
-   [react/view {:align-items :center :margin-top 16}
+   [react/view {:style {:padding-bottom 8}}
+    [react/i18n-text {:style styles/no-chats-text :key :chat-and-transact}]]
+   [invite/invite-button]
+   [react/view {:align-items :center :padding-top 8}
     [react/view {:style (styles/hr-wrapper)}]
     [react/i18n-text {:style (styles/or-text) :key :or}]]
    [react/view {:margin-top 16}
