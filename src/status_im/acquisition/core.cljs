@@ -5,25 +5,13 @@
             [status-im.waku.core :as waku]
             [status-im.utils.types :as types]
             [status-im.utils.platform :as platform]
+            [status-im.ethereum.core :as ethereum]
             ["react-native-device-info" :refer [getInstallReferrer]]))
 
-(re-frame/reg-fx
- ::get-referrer
- (fn []
-   (when platform/android?
-     (-> (getInstallReferrer)
-         (.then (fn [referrer]
-                  (re-frame/dispatch [::set-referrer referrer])))))))
+(def acquisition-gateway "https://get.status.im")
 
-(fx/defn set-referrer
-  {:events [::set-referrer]}
-  [{:keys [db]} referrer]
-  {:db (assoc-in db [:acquisition :install-referrer] referrer)})
-
-(fx/defn handle-app-setup
-  {}
-  []
-  {::get-referrer nil})
+(def acquisition-routes {:clicks        (str acquisition-gateway "/clicks")
+                         :registrations (str acquisition-gateway "/registrations")})
 
 (fx/defn handle-error
   {:events [::on-error]}
@@ -44,14 +32,45 @@
                                                          :message    msg
                                                          :on-success on-success} %])}]}))
 
+(re-frame/reg-fx
+ ::get-referrer
+ (fn []
+   (when platform/android?
+     (-> (getInstallReferrer)
+         (.then (fn [referrer]
+                  (re-frame/dispatch [::has-referrer referrer])))))))
+
+(fx/defn referrer-registered
+  {:events [::referrer-registered]}
+  [{:keys [db]}]
+  {:db db})
+
+(fx/defn has-referrer
+  {:events [::has-referrer]}
+  [{:keys [db] :as cofx} referrer]
+  (let [payload {:chat_key    (get-in db [:multiaccount :public-key])
+                 :address     (ethereum/default-address db)
+                 :invite_Code referrer}]
+    (handle-acquisition cofx {:message    payload
+                              :type       :clicks
+                              :on-success ::referrer-registered})))
+
+(fx/defn app-setup
+  {}
+  [_]
+  {::get-referrer nil})
+
 (fx/defn call-acquisition-gateway
   {:events [::call-acquisition-gateway]}
-  [cofx {:keys [chat-key message on-success]} sig]
+  [cofx
+   {:keys [chat-key message on-success type]
+    :or   {type :registrations}}
+   sig]
   (let [payload {:chat_key chat-key
                  :msg      message
                  :sig      sig
                  :version  2}]
-    {:http-post {:url                   (get-in cofx [:db :acquisition-gateway])
+    {:http-post {:url                   (get acquisition-routes type)
                  :opts                  {:headers {"Content-Type" "application/json"}}
                  :data                  (types/clj->json payload)
                  :success-event-creator (fn [response]
