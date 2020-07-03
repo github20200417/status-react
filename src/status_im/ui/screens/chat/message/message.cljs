@@ -12,6 +12,7 @@
             [status-im.ui.screens.chat.utils :as chat.utils]
             [status-im.utils.contenthash :as contenthash]
             [status-im.utils.security :as security]
+            [status-im.ui.screens.chat.message.reactions :as reactions]
             [reagent.core :as reagent])
   (:require-macros [status-im.utils.views :refer [defview letsubs]]))
 
@@ -152,24 +153,15 @@
       ;; Append timestamp to new block
       (conj elements timestamp))))
 
-(defn text-message-press-handlers [message]
-  {:on-press      (fn [_]
-                    (re-frame/dispatch [:chat.ui/set-chat-ui-props {:input-bottom-sheet nil}])
-                    (react/dismiss-keyboard!))
-   :on-long-press #(re-frame/dispatch [:bottom-sheet/show-sheet
-                                       {:content (sheets/message-long-press message)
-                                        :height  192}])})
-
 (defn text-message
   [{:keys [content outgoing current-public-key public?] :as message}]
-  [react/touchable-highlight (text-message-press-handlers message)
-   [message-bubble-wrapper message
-    (let [response-to (:response-to content)]
-      [react/view
-       (when (and (seq response-to) (:quoted-message message))
-         [quoted-message response-to (:quoted-message message) outgoing current-public-key public?])
-       [render-parsed-text-with-timestamp message (:parsed-text content)]])
-    [message-timestamp message true]]])
+  [message-bubble-wrapper message
+   (let [response-to (:response-to content)]
+     [react/view
+      (when (and (seq response-to) (:quoted-message message))
+        [quoted-message response-to (:quoted-message message) outgoing current-public-key public?])
+      [render-parsed-text-with-timestamp message (:parsed-text content)]])
+   [message-timestamp message true]])
 
 (defn unknown-content-type
   [{:keys [outgoing content-type content] :as message}]
@@ -189,14 +181,13 @@
 (defn emoji-message
   [{:keys [content current-public-key outgoing public?] :as message}]
   (let [response-to (:response-to content)]
-    [react/touchable-highlight (text-message-press-handlers message)
-     [message-bubble-wrapper message
-      [react/view {:style (style/style-message-text outgoing)}
-       (when (and (seq response-to) (:quoted-message message))
-         [quoted-message response-to (:quoted-message message) outgoing current-public-key public?])
-       [react/text {:style (style/emoji-message message)}
-        (:text content)]]
-      [message-timestamp message]]]))
+    [message-bubble-wrapper message
+     [react/view {:style (style/style-message-text outgoing)}
+      (when (and (seq response-to) (:quoted-message message))
+        [quoted-message response-to (:quoted-message message) outgoing current-public-key public?])
+      [react/text {:style (style/emoji-message message)}
+       (:text content)]]
+     [message-timestamp message]]))
 
 (defn message-not-sent-text
   [chat-id message-id]
@@ -229,23 +220,24 @@
   [{:keys [alias first-in-group? display-photo? identicon display-username?
            from outgoing]
     :as   message} content]
-  [react/view {:style (style/message-wrapper message)
+  [react/view {:style               (style/message-wrapper message)
                :accessibility-label :chat-item}
    [react/view (style/message-body message)
     (when display-photo?
-      ; userpic
+                                        ; userpic
       [react/view (style/message-author-userpic outgoing)
        (when first-in-group?
          [react/touchable-highlight {:on-press #(re-frame/dispatch [:chat.ui/show-profile from])}
           [photos/member-identicon identicon]])])
-    ; username
+                                        ; username
     [react/view (style/message-author-wrapper outgoing display-photo?)
      (when display-username?
        [react/touchable-opacity {:style    style/message-author-touchable
                                  :on-press #(re-frame/dispatch [:chat.ui/show-profile from])}
         [message-author-name from alias]])
      ;;MESSAGE CONTENT
-     content]]
+     [react/view
+      content]]]
    ; delivery status
    [react/view (style/delivery-status outgoing)
     [message-delivery-status message]]])
@@ -271,6 +263,14 @@
                      :resize-mode :contain
                      :source {:uri uri}}]])))
 
+(defn text-message-press-handlers [message]
+  {:on-press      (fn [_]
+                    (re-frame/dispatch [:chat.ui/set-chat-ui-props {:input-bottom-sheet nil}])
+                    (react/dismiss-keyboard!))
+   :on-long-press #(re-frame/dispatch [:bottom-sheet/show-sheet
+                                       {:content (sheets/message-long-press message)
+                                        :height  192}])})
+
 (defn image-message-press-handlers [{:keys [content] :as message}]
   {:on-press      (fn [_]
                     (when (:image content)
@@ -292,28 +292,45 @@
                                          {:content (sheets/sticker-long-press message)
                                           :height  64}])}))
 
-(defn chat-message [{:keys [public? content content-type] :as message}]
-  (if (= content-type constants/content-type-command)
-    [message.command/command-content message-content-wrapper message]
-    (if (= content-type constants/content-type-system-text)
-      [system-message-content-wrapper message [system-text-message message]]
-      [message-content-wrapper
-       message
-       (if (= content-type constants/content-type-text)
-         ;; text message
-         [text-message message]
-         (if (= content-type constants/content-type-status)
-           [message-content-status message]
-           (if (= content-type constants/content-type-emoji)
-             [emoji-message message]
-             (if (= content-type constants/content-type-sticker)
-               [react/touchable-highlight (sticker-message-press-handlers message)
-                [react/image {:style  {:margin 10 :width 140 :height 140}
-                              ;;TODO (perf) move to event
-                              :source {:uri (contenthash/url (-> content :sticker :hash))}}]]
-               (if (and (= content-type constants/content-type-image)
-                        ;; Disabling images for public-chats
-                        (not public?))
-                 [react/touchable-highlight (image-message-press-handlers message)
-                  [message-content-image message]]
-                 [unknown-content-type message])))))])))
+(defmulti ->message :content-type)
+
+(defmethod ->message constants/content-type-command
+  [message]
+  [message.command/command-content message-content-wrapper message])
+
+(defmethod ->message constants/content-type-system-text [message]
+  [system-message-content-wrapper message [system-text-message message]])
+
+(defmethod ->message constants/content-type-text [message]
+  [message-content-wrapper message
+   [react/touchable-highlight (text-message-press-handlers message)
+    [text-message message]]])
+
+(defmethod ->message constants/content-type-status [message]
+  [message-content-wrapper message
+   [message-content-status message]])
+
+(defmethod ->message constants/content-type-emoji [message]
+  [message-content-wrapper message
+   [react/touchable-highlight (text-message-press-handlers message)
+    [emoji-message message]]])
+
+(defmethod ->message constants/content-type-sticker [{:keys [content] :as message}]
+  [message-content-wrapper message
+   [react/touchable-highlight (sticker-message-press-handlers message)
+    [react/image {:style  {:margin 10 :width 140 :height 140}
+                  ;;TODO (perf) move to event
+                  :source {:uri (contenthash/url (-> content :sticker :hash))}}]]])
+
+(defmethod ->message constants/content-type-image [message]
+  [message-content-wrapper message
+   [react/touchable-highlight (image-message-press-handlers message)
+    [message-content-image message]]])
+
+(defmethod ->message :default [message]
+  [message-content-wrapper message
+   [unknown-content-type message]])
+
+(defn chat-message [message]
+  [reactions/with-reaction-picker {:message message}
+   [->message message]])

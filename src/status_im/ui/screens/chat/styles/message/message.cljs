@@ -93,7 +93,7 @@
    (if outgoing
      {:padding-left 8}
      {:padding-horizontal 8
-      :padding-right 8})))
+      :padding-right      8})))
 
 (def delivery-text
   {:color       colors/gray
