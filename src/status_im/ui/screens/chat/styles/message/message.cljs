@@ -10,11 +10,6 @@
   [outgoing]
   {:color (if outgoing colors/white-persist colors/text)})
 
-(defn last-message-padding
-  [{:keys [first? typing]}]
-  (when (and first? (not typing))
-    {:padding-bottom 16}))
-
 (defn system-message-body
   [_]
   {:margin-top     4
@@ -54,12 +49,8 @@
                                    :bottom                9 ; 6 Bubble bottom, 3 message baseline
                                    (if rtl? :left :right) 12})))
 
-(defn message-wrapper-base [message]
-  (merge {:flex-direction   :column}
-         (last-message-padding message)))
-
-(defn message-wrapper [{:keys [outgoing] :as message}]
-  (merge (message-wrapper-base message)
+(defn message-wrapper [{:keys [outgoing]}]
+  (merge {:flex-direction :column}
          (if outgoing
            {:margin-left 96}
            {:margin-right 52})))

@@ -150,7 +150,7 @@
                                         [message-datemark/chat-datemark (:value message)]
                                         (if (= type :gap)
                                           [gap/gap message idx messages-list-ref]
-                                          ; message content
+                                        ; message content
                                           [message/chat-message
                                            (assoc message
                                                   :incoming-group (and group-chat (not outgoing))
@@ -160,6 +160,7 @@
       :on-viewable-items-changed    on-viewable-items-changed
       :on-end-reached               #(re-frame/dispatch [:chat.ui/load-more-messages])
       :on-scroll-to-index-failed    #() ;;don't remove this
+      :contentContainerStyle        {:padding-vertical 16}
       :keyboard-should-persist-taps :handled}]))
 
 (defview empty-bottom-sheet []

@@ -244,8 +244,7 @@
 
 (defn system-message-content-wrapper
   [message child]
-  [react/view {:style (style/message-wrapper-base message)
-               :accessibility-label :chat-item}
+  [react/view {:accessibility-label :chat-item}
    [react/view (style/system-message-body message)
     [react/view child]]])
 
