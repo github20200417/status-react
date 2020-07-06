@@ -13,11 +13,11 @@
 (def tabbar-height 36)
 (def text-input-height 54)
 
-(def animation-duration 200)
+(def animation-duration 150)
 
 (def scale         0.8)
 (def translate-x   27)
-(def translate-y   -54)
+(def translate-y   -24)
 
 (def reactions [[:love (:love resources/reactions)]
                 [:thumbs-up (:thumbs-up resources/reactions)]
@@ -94,6 +94,7 @@
    (fn [props]
      (let [{outgoing       :outgoing
             animation      :animation
+            spring         :spring
             top            :top
             message-height :messageHeight
             on-close       :onClose
@@ -110,7 +111,10 @@
 
            full-height   (+ message-height picker-height top)
            max-height    (- window-height bottom-inset tabbar-height text-input-height)
-           translate-top (- (max 0 (- full-height max-height)))]
+           translate-top (- (max 0 (- full-height max-height)))
+           translation-x (if outgoing
+                           translate-x
+                           (* -1 translate-x))]
        (reagent/as-element
         [:<>
          [rn/view {:style {:position :absolute
@@ -138,11 +142,9 @@
                                                                      :flex-start)
                                                   :top             message-height
                                                   :opacity         animation
-                                                  :transform       [{:translateX (animated/mix animation (if outgoing
-                                                                                                           translate-x
-                                                                                                           (* -1 translate-x)) 0)}
-                                                                    {:translateY (animated/mix animation translate-y 0)}
-                                                                    {:scale (animated/mix animation scale 1)}]})}
+                                                  :transform       [{:translateX (animated/mix spring translation-x 0)}
+                                                                    {:translateY (animated/mix spring translate-y 0)}
+                                                                    {:scale (animated/mix spring scale 1)}]})}
            [picker {:outgoing   outgoing
                     :on-reply   on-reply
                     :on-copy    on-copy
@@ -150,22 +152,25 @@
                     :animation  animation}]]]])))))
 
 (defn with-reaction-picker []
-  (let [ref            (react/create-ref)
-        animated-state (animated/value 0)
-        animation      (animated/with-timing-transition
-                         animated-state
-                         {:duration animation-duration
-                          :easing   (:ease-out animated/easings)})
-        visible        (reagent/atom false)
-        on-close       (fn []
-                         (animated/set-value animated-state 0)
-                         (js/setTimeout
-                          #(reset! visible false)
-                          animation-duration))
-        position       (reagent/atom {})
-        on-open        (fn [pos]
-                         (reset! position pos)
-                         (reset! visible true))]
+  (let [ref              (react/create-ref)
+        animated-state   (animated/value 0)
+        spring-animation (animated/with-spring-transition
+                           animated-state
+                           (:jump animated/springs))
+        animation        (animated/with-timing-transition
+                           animated-state
+                           {:duration animation-duration
+                            :easing   (:ease-in-out animated/easings)})
+        visible          (reagent/atom false)
+        on-close         (fn []
+                           (animated/set-value animated-state 0)
+                           (js/setTimeout
+                            #(reset! visible false)
+                            animation-duration))
+        position         (reagent/atom {})
+        on-open          (fn [pos]
+                           (reset! position pos)
+                           (reset! visible true))]
     (fn [{:keys [message render on-reply on-copy send-emoji]}]
       [:<>
        [rn/view {:ref ref}
@@ -181,6 +186,7 @@
                   :transparent      true}
         [picker-modal {:outgoing       (:outgoing message)
                        :animation      animation
+                       :spring         spring-animation
                        :top            (:top @position)
                        :message-height (:height @position)
                        :on-close       on-close
