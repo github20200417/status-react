@@ -224,11 +224,17 @@
        (when (or (and (not outgoing) modal) first-in-group?)
          [react/touchable-highlight {:on-press #(re-frame/dispatch [:chat.ui/show-profile from])}
           [photos/member-identicon identicon]])])
-    [react/view (style/message-author-wrapper outgoing display-photo?)
+    [react/view {:style (style/message-author-wrapper outgoing display-photo?)}
      (when (or (and (not outgoing) modal) display-username?)
        [react/touchable-opacity {:style    style/message-author-touchable
                                  :on-press #(re-frame/dispatch [:chat.ui/show-profile from])}
-        [message-author-name from alias modal]])
+        ;; FIXME
+        [react/view {:style (if (and modal (not display-username?))
+                              {:position :absolute
+                               :flex     1
+                               :top      -19}
+                              {:padding-vertical 2})}
+         [message-author-name from alias modal]]])
      ;;MESSAGE CONTENT
      [react/view
       content]]]

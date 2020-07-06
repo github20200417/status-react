@@ -33,9 +33,11 @@
   (some-> ref
           react/current-ref
           (measure-in-window
-           (fn [x y]
-             (cb {:top  y
-                  :left x})))))
+           (fn [x y width height]
+             (cb {:top    y
+                  :left   x
+                  :width  width
+                  :height height})))))
 
 (def picker-wrapper-style
   {:position       :absolute
@@ -90,20 +92,18 @@
 (def picker-modal
   (reagent/adapt-react-class
    (fn [props]
-     (let [{outgoing   :outgoing
-            animation  :animation
-            top        :top
-            on-close   :onClose
-            on-reply   :onReply
-            on-copy    :onCopy
-            send-emoji :sendEmoji
-            children   :children}
+     (let [{outgoing       :outgoing
+            animation      :animation
+            top            :top
+            message-height :messageHeight
+            on-close       :onClose
+            on-reply       :onReply
+            on-copy        :onCopy
+            send-emoji     :sendEmoji
+            children       :children}
            (bean/bean props)
            {bottom-inset :bottom}  (safe-area/use-safe-area)
            {window-height :height} (rn/use-window-dimensions)
-
-           {message-height    :height
-            on-message-layout :on-layout} (rn/use-layout)
 
            {picker-height    :height
             on-picker-layout :on-layout} (rn/use-layout)
@@ -129,9 +129,7 @@
                                           :opacity   animation
                                           :transform [{:translateY (animated/mix animation 0 translate-top)}]
                                           :postion   :absolute}}
-          (into [rn/view {:pointer-events :box-none
-                          :on-layout      on-message-layout}]
-                (react/get-children children))
+          (into [:<>] (react/get-children children))
           [animated/view {:on-layout      on-picker-layout
                           :pointer-events :box-none
                           :style          (merge picker-wrapper-style
@@ -181,17 +179,18 @@
                                       (js/requestAnimationFrame
                                        #(animated/set-value animated-state 1)))
                   :transparent      true}
-        [picker-modal {:outgoing   (:outgoing message)
-                       :animation  animation
-                       :top        (:top @position)
-                       :on-close   on-close
-                       :on-reply   (fn []
-                                     (on-close)
-                                     (js/setTimeout on-reply animation-duration))
-                       :on-copy    (fn []
-                                     (on-close)
-                                     (js/setTimeout on-copy animation-duration))
-                       :send-emoji (fn [emoji]
-                                     (on-close)
-                                     (js/setTimeout #(send-emoji emoji) animation-duration))}
+        [picker-modal {:outgoing       (:outgoing message)
+                       :animation      animation
+                       :top            (:top @position)
+                       :message-height (:height @position)
+                       :on-close       on-close
+                       :on-reply       (fn []
+                                         (on-close)
+                                         (js/setTimeout on-reply animation-duration))
+                       :on-copy        (fn []
+                                         (on-close)
+                                         (js/setTimeout on-copy animation-duration))
+                       :send-emoji     (fn [emoji]
+                                         (on-close)
+                                         (js/setTimeout #(send-emoji emoji) animation-duration))}
          [render message {:modal true}]]]])))

@@ -74,8 +74,8 @@
      :padding-left  8}))
 
 (def message-author-touchable
-  {:margin-left      12
-   :padding-vertical 2})
+  {:margin-left    12
+   :flex-direction :row})
 
 (defn message-author-userpic [outgoing]
   (merge
