@@ -172,12 +172,6 @@
       (:text content)
       (str "Unhandled content-type " content-type))]])
 
-(defn system-text-message
-  [{:keys [content] :as message}]
-  [message-bubble-wrapper message
-   [react/view
-    [render-parsed-text message (:parsed-text content)]]])
-
 (defn emoji-message
   [{:keys [content current-public-key outgoing public?] :as message}]
   (let [response-to (:response-to content)]
@@ -211,42 +205,36 @@
              (= outgoing-status :not-sent))
     [message-not-sent-text chat-id message-id]))
 
-(defview message-author-name [from alias]
+(defview message-author-name [from alias modal]
   (letsubs [contact-name [:contacts/raw-contact-name-by-identity from]]
-    (chat.utils/format-author (or contact-name alias) style/message-author-name-container)))
+    (chat.utils/format-author (or contact-name alias) modal)))
 
 (defn message-content-wrapper
   "Author, userpic and delivery wrapper"
   [{:keys [alias first-in-group? display-photo? identicon display-username?
            from outgoing]
-    :as   message} content]
+    :as   message} content modal]
   [react/view {:style               (style/message-wrapper message)
+               :pointer-events      :box-none
                :accessibility-label :chat-item}
-   [react/view (style/message-body message)
+   [react/view {:style          (style/message-body message)
+                :pointer-events :box-none}
     (when display-photo?
-                                        ; userpic
       [react/view (style/message-author-userpic outgoing)
-       (when first-in-group?
+       (when (or (and (not outgoing) modal) first-in-group?)
          [react/touchable-highlight {:on-press #(re-frame/dispatch [:chat.ui/show-profile from])}
           [photos/member-identicon identicon]])])
-                                        ; username
     [react/view (style/message-author-wrapper outgoing display-photo?)
-     (when display-username?
+     (when (or (and (not outgoing) modal) display-username?)
        [react/touchable-opacity {:style    style/message-author-touchable
                                  :on-press #(re-frame/dispatch [:chat.ui/show-profile from])}
-        [message-author-name from alias]])
+        [message-author-name from alias modal]])
      ;;MESSAGE CONTENT
      [react/view
       content]]]
    ; delivery status
    [react/view (style/delivery-status outgoing)
     [message-delivery-status message]]])
-
-(defn system-message-content-wrapper
-  [message child]
-  [react/view {:accessibility-label :chat-item}
-   [react/view (style/system-message-body message)
-    [react/view child]]])
 
 (defn message-content-image [{:keys [content outgoing]}]
   (let [dimensions (reagent/atom [260 260])
@@ -261,24 +249,6 @@
        [react/image {:style {:width (first @dimensions) :height (last @dimensions)}
                      :resize-mode :contain
                      :source {:uri uri}}]])))
-
-(defn text-message-press-handlers [message]
-  {:on-press      (fn [_]
-                    (re-frame/dispatch [:chat.ui/set-chat-ui-props {:input-bottom-sheet nil}])
-                    (react/dismiss-keyboard!))
-   :on-long-press #(re-frame/dispatch [:bottom-sheet/show-sheet
-                                       {:content (sheets/message-long-press message)
-                                        :height  192}])})
-
-(defn image-message-press-handlers [{:keys [content] :as message}]
-  {:on-press      (fn [_]
-                    (when (:image content)
-                      (re-frame/dispatch [:navigate-to :image-preview message]))
-                    (re-frame/dispatch [:chat.ui/set-chat-ui-props {:input-bottom-sheet nil}])
-                    (react/dismiss-keyboard!))
-   :on-long-press #(re-frame/dispatch [:bottom-sheet/show-sheet
-                                       {:content (sheets/image-long-press message false)
-                                        :height  160}])})
 
 (defn sticker-message-press-handlers [{:keys [content] :as message}]
   (let [pack (get-in content [:sticker :pack])]
@@ -297,22 +267,34 @@
   [message]
   [message.command/command-content message-content-wrapper message])
 
-(defmethod ->message constants/content-type-system-text [message]
-  [system-message-content-wrapper message [system-text-message message]])
+(defmethod ->message constants/content-type-system-text [{:keys [content] :as message}]
+  [react/view {:accessibility-label :chat-item}
+   [react/view (style/system-message-body message)
+    [message-bubble-wrapper message
+     [react/view
+      [render-parsed-text message (:parsed-text content)]]]]])
 
-(defmethod ->message constants/content-type-text [message]
+(defmethod ->message constants/content-type-text [message {:keys [on-long-press modal]}]
   [message-content-wrapper message
-   [react/touchable-highlight (text-message-press-handlers message)
-    [text-message message]]])
+   [react/touchable-highlight {:on-press      (fn [_]
+                                                (re-frame/dispatch [:chat.ui/set-chat-ui-props {:input-bottom-sheet nil}])
+                                                (react/dismiss-keyboard!))
+                               :on-long-press on-long-press}
+    [text-message message]]
+   modal])
 
 (defmethod ->message constants/content-type-status [message]
   [message-content-wrapper message
    [message-content-status message]])
 
-(defmethod ->message constants/content-type-emoji [message]
+(defmethod ->message constants/content-type-emoji [message {:keys [on-long-press modal]}]
   [message-content-wrapper message
-   [react/touchable-highlight (text-message-press-handlers message)
-    [emoji-message message]]])
+   [react/touchable-highlight {:on-press      (fn [_]
+                                                (re-frame/dispatch [:chat.ui/set-chat-ui-props {:input-bottom-sheet nil}])
+                                                (react/dismiss-keyboard!))
+                               :on-long-press on-long-press}
+    [emoji-message message]]
+   modal])
 
 (defmethod ->message constants/content-type-sticker [{:keys [content] :as message}]
   [message-content-wrapper message
@@ -321,9 +303,16 @@
                   ;;TODO (perf) move to event
                   :source {:uri (contenthash/url (-> content :sticker :hash))}}]]])
 
-(defmethod ->message constants/content-type-image [message]
+(defmethod ->message constants/content-type-image [{:keys [content] :as message}]
   [message-content-wrapper message
-   [react/touchable-highlight (image-message-press-handlers message)
+   [react/touchable-highlight {:on-press      (fn [_]
+                                                (when (:image content)
+                                                  (re-frame/dispatch [:navigate-to :image-preview message]))
+                                                (re-frame/dispatch [:chat.ui/set-chat-ui-props {:input-bottom-sheet nil}])
+                                                (react/dismiss-keyboard!))
+                               :on-long-press #(re-frame/dispatch [:bottom-sheet/show-sheet
+                                                                   {:content (sheets/image-long-press message false)
+                                                                    :height  160}])}
     [message-content-image message]]])
 
 (defmethod ->message :default [message]
@@ -331,5 +320,8 @@
    [unknown-content-type message]])
 
 (defn chat-message [message]
-  [reactions/with-reaction-picker {:message message}
-   [->message message]])
+  [reactions/with-reaction-picker {:message    message
+                                   :on-reply   #(re-frame/dispatch [:chat.ui/reply-to-message message])
+                                   :on-copy    #(react/copy-to-clipboard (get-in message [:content :text]))
+                                   :send-emoji println
+                                   :render     ->message}])
