@@ -6504,16 +6504,16 @@
   },
 
   {
-    "path": "com/squareup/okio/okio/2.7.0-alpha.lockfree.2/okio-2.7.0-alpha.lockfree.2",
+    "path": "com/squareup/okio/okio/2.7.0/okio-2.7.0",
     "host": "https://repo.maven.apache.org/maven2",
     "type": "jar",
     "pom": {
-      "sha1": "c3e3eca5d192679ca91729b81992f0564e964b68",
-      "sha256": "11bp2yxj5k04cxrjamf1pbxkm1ghhv83z47f0blgl05mwgd1xpl0"
+      "sha1": "c171afa3f9084ec998ad1ff7b24e7b857b5bdf24",
+      "sha256": "1p1fnhr6rbry0r1y97mwr5fmb6ld5bf7gd7234yafjj3fhjvh1hw"
     },
     "jar": {
-      "sha1": "1b89666c085f2f7bbcc02e90b9f3b7e035314218",
-      "sha256": "06bimqyial008vxfn32bw3d4hx3d65022v6ahgvb78ipij2a3im9"
+      "sha1": "1181a029fa94760ccf46f264bc06ca2e60262f8f",
+      "sha256": "1fc65k52z6zxrbahs0fzigpyb0290870fwxslgc5c0hdvsx05ck3"
     }
   },
 
@@ -8138,16 +8138,16 @@
   },
 
   {
-    "path": "org/checkerframework/checker-qual/3.4.1/checker-qual-3.4.1",
+    "path": "org/checkerframework/checker-qual/3.5.0/checker-qual-3.5.0",
     "host": "https://repo.maven.apache.org/maven2",
     "type": "jar",
     "pom": {
-      "sha1": "48f9d7fe1e9df19b41d95388fed313dacddcea69",
-      "sha256": "0x4k1glx55qppc9cnri07va54fd20wg3hmgvj4s7rdrgjg8c0wc1"
+      "sha1": "408a4451ff5bdef60400a49657867db100ea0f83",
+      "sha256": "08apndxq787glqdn6r0734nizck7qw7yd4imh2hk3nwflywb6di8"
     },
     "jar": {
-      "sha1": "b3df2bf4d7d258e5aa192c3ac6f7f84688046262",
-      "sha256": "0zjha61sasdfyscmll51cjcnzxgqzqcmkq7w1yfdchh58s3wirdw"
+      "sha1": "2f50520c8abea66fbd8d26e481d3aef5c673b510",
+      "sha256": "19556pzrqcwwmavx3yrbnm6b9kcbjnv3cf2pq9pn15cay6rr16bj"
     }
   },
 
@@ -8204,16 +8204,16 @@
   },
 
   {
-    "path": "org/codehaus/mojo/animal-sniffer-annotations/1.18/animal-sniffer-annotations-1.18",
+    "path": "org/codehaus/mojo/animal-sniffer-annotations/1.19/animal-sniffer-annotations-1.19",
     "host": "https://repo.maven.apache.org/maven2",
     "type": "jar",
     "pom": {
-      "sha1": "82452242e8e2d0e058182cb01f29c3c30391dac3",
-      "sha256": "1q6jlsvrfz6dsp22v1a4nq3qiypbxdx40z59kqrgadcwhgs25xdd"
+      "sha1": "45a124d1de95705d6d8e7547e131ebdb3a99fada",
+      "sha256": "1lpidi60kl17mn45c7r00kw2s2msd1qbshg6r32ikk0dv09m379s"
     },
     "jar": {
-      "sha1": "f7aa683ea79dc6681ee9fb95756c999acbb62f5d",
-      "sha256": "17bjbhpfyppyswfi44q07iss9vv0xa63vyl0xzpvmscfni95iw27"
+      "sha1": "1536e1a8fd552dc05f12b5f0827fbb2ee3d5a89b",
+      "sha256": "17gf2dy2rjlccw3g1n82ipdv8hacak6dnpygaifsn4xgxryc4zp6"
     }
   },
 
@@ -8238,12 +8238,12 @@
   },
 
   {
-    "path": "org/codehaus/mojo/animal-sniffer-parent/1.18/animal-sniffer-parent-1.18",
+    "path": "org/codehaus/mojo/animal-sniffer-parent/1.19/animal-sniffer-parent-1.19",
     "host": "https://repo.maven.apache.org/maven2",
     "type": "pom",
     "pom": {
-      "sha1": "dd9080d0b2019e3cbb8b97dc7c057787062172f2",
-      "sha256": "0g4pf107x59g68cdvc0ixbxjd1qa21q6ii0p2d531xkwli3gb7af"
+      "sha1": "dd4912ea50c7ed0941f713e49457212e83eab926",
+      "sha256": "1f4m3si7bnbdgrl11w5v7r7n99rnj2mkj19awwdyyf5dywkmgav7"
     }
   },
 

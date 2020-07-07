@@ -10,6 +10,7 @@
             [status-im.acquisition.core :as acquisition]))
 
 (def get-link "get.status.im")
+(def privacy-policy-link "get.status.im")
 
 (re-frame/reg-fx
  ::share
@@ -87,3 +88,13 @@
                                       :on-success #(re-frame/dispatch [::get-reward-success address %])})
                                    accounts)}
               (navigation/navigate-to-cofx :referral-invite nil))))
+
+(re-frame/reg-fx
+ ::terms-and-conditions
+ (fn []
+   (.openURL ^js react/linking privacy-policy-link)))
+
+(fx/defn open-privacy-policy-link
+  {:events [::terms-and-conditions]}
+  [_]
+  {::terms-and-conditions nil})

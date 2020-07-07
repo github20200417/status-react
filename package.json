@@ -10,6 +10,7 @@
     "app:android": "react-native run-android"
   },
   "dependencies": {
+    "@react-native-community/async-storage": "^1.11.0",
     "@react-native-community/cameraroll": "^1.6.1",
     "@react-native-community/clipboard": "^1.2.2",
     "@react-native-community/hooks": "^2.5.1",

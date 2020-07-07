@@ -470,7 +470,7 @@ https://repo.maven.apache.org/maven2/com/squareup/okhttp3/parent/3.12.1/parent-3
 https://repo.maven.apache.org/maven2/com/squareup/okio/okio-parent/1.15.0/okio-parent-1.15.0.pom
 https://repo.maven.apache.org/maven2/com/squareup/okio/okio/1.15.0/okio-1.15.0.pom
 https://repo.maven.apache.org/maven2/com/squareup/okio/okio/2.6.0/okio-2.6.0.pom
-https://repo.maven.apache.org/maven2/com/squareup/okio/okio/2.7.0-alpha.lockfree.2/okio-2.7.0-alpha.lockfree.2.pom
+https://repo.maven.apache.org/maven2/com/squareup/okio/okio/2.7.0/okio-2.7.0.pom
 https://repo.maven.apache.org/maven2/com/sun/activation/all/1.2.0/all-1.2.0.pom
 https://repo.maven.apache.org/maven2/com/sun/activation/all/2.0.0-RC3/all-2.0.0-RC3.pom
 https://repo.maven.apache.org/maven2/com/sun/activation/jakarta.activation/2.0.0-RC3/jakarta.activation-2.0.0-RC3.pom
@@ -605,15 +605,15 @@ https://repo.maven.apache.org/maven2/org/bouncycastle/bcprov-jdk15on/1.56/bcprov
 https://repo.maven.apache.org/maven2/org/bouncycastle/bcprov-jdk15on/1.60/bcprov-jdk15on-1.60.pom
 https://repo.maven.apache.org/maven2/org/checkerframework/checker-compat-qual/2.5.5/checker-compat-qual-2.5.5.pom
 https://repo.maven.apache.org/maven2/org/checkerframework/checker-qual/2.5.2/checker-qual-2.5.2.pom
-https://repo.maven.apache.org/maven2/org/checkerframework/checker-qual/3.4.1/checker-qual-3.4.1.pom
+https://repo.maven.apache.org/maven2/org/checkerframework/checker-qual/3.5.0/checker-qual-3.5.0.pom
 https://repo.maven.apache.org/maven2/org/codehaus/codehaus-parent/4/codehaus-parent-4.pom
 https://repo.maven.apache.org/maven2/org/codehaus/groovy/groovy-all/2.4.15/groovy-all-2.4.15.pom
 https://repo.maven.apache.org/maven2/org/codehaus/mojo/animal-sniffer-annotations/1.14/animal-sniffer-annotations-1.14.pom
 https://repo.maven.apache.org/maven2/org/codehaus/mojo/animal-sniffer-annotations/1.17/animal-sniffer-annotations-1.17.pom
-https://repo.maven.apache.org/maven2/org/codehaus/mojo/animal-sniffer-annotations/1.18/animal-sniffer-annotations-1.18.pom
+https://repo.maven.apache.org/maven2/org/codehaus/mojo/animal-sniffer-annotations/1.19/animal-sniffer-annotations-1.19.pom
 https://repo.maven.apache.org/maven2/org/codehaus/mojo/animal-sniffer-parent/1.14/animal-sniffer-parent-1.14.pom
 https://repo.maven.apache.org/maven2/org/codehaus/mojo/animal-sniffer-parent/1.17/animal-sniffer-parent-1.17.pom
-https://repo.maven.apache.org/maven2/org/codehaus/mojo/animal-sniffer-parent/1.18/animal-sniffer-parent-1.18.pom
+https://repo.maven.apache.org/maven2/org/codehaus/mojo/animal-sniffer-parent/1.19/animal-sniffer-parent-1.19.pom
 https://repo.maven.apache.org/maven2/org/codehaus/mojo/mojo-parent/34/mojo-parent-34.pom
 https://repo.maven.apache.org/maven2/org/codehaus/mojo/mojo-parent/40/mojo-parent-40.pom
 https://repo.maven.apache.org/maven2/org/codehaus/mojo/mojo-parent/50/mojo-parent-50.pom
