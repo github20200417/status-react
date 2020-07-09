@@ -213,7 +213,7 @@
   "Author, userpic and delivery wrapper"
   [{:keys [alias first-in-group? display-photo? identicon display-username?
            from outgoing]
-    :as   message} content modal]
+    :as   message} content {:keys [modal close-modal]}]
   [react/view {:style               (style/message-wrapper message)
                :pointer-events      :box-none
                :accessibility-label :chat-item}
@@ -222,12 +222,14 @@
     (when display-photo?
       [react/view (style/message-author-userpic outgoing)
        (when (or (and (not outgoing) modal) first-in-group?)
-         [react/touchable-highlight {:on-press #(re-frame/dispatch [:chat.ui/show-profile from])}
+         [react/touchable-highlight {:on-press #(do (when modal (close-modal))
+                                                    (re-frame/dispatch [:chat.ui/show-profile from]))}
           [photos/member-identicon identicon]])])
     [react/view {:style (style/message-author-wrapper outgoing display-photo?)}
      (when (or (and (not outgoing) modal) display-username?)
        [react/touchable-opacity {:style    style/message-author-touchable
-                                 :on-press #(re-frame/dispatch [:chat.ui/show-profile from])}
+                                 :on-press #(do (when modal (close-modal))
+                                                (re-frame/dispatch [:chat.ui/show-profile from]))}
         ;; FIXME
         [react/view {:style (if (and modal (not display-username?))
                               {:position :absolute
@@ -280,27 +282,29 @@
      [react/view
       [render-parsed-text message (:parsed-text content)]]]]])
 
-(defmethod ->message constants/content-type-text [message {:keys [on-long-press modal]}]
+(defmethod ->message constants/content-type-text [message {:keys [on-long-press close-modal modal]}]
   [message-content-wrapper message
    [react/touchable-highlight {:on-press      (fn [_]
                                                 (re-frame/dispatch [:chat.ui/set-chat-ui-props {:input-bottom-sheet nil}])
                                                 (react/dismiss-keyboard!))
                                :on-long-press on-long-press}
     [text-message message]]
-   modal])
+   {:modal       modal
+    :close-modal close-modal}])
 
 (defmethod ->message constants/content-type-status [message]
   [message-content-wrapper message
    [message-content-status message]])
 
-(defmethod ->message constants/content-type-emoji [message {:keys [on-long-press modal]}]
+(defmethod ->message constants/content-type-emoji [message {:keys [on-long-press close-modal modal]}]
   [message-content-wrapper message
    [react/touchable-highlight {:on-press      (fn [_]
                                                 (re-frame/dispatch [:chat.ui/set-chat-ui-props {:input-bottom-sheet nil}])
                                                 (react/dismiss-keyboard!))
                                :on-long-press on-long-press}
     [emoji-message message]]
-   modal])
+   {:modal       modal
+    :close-modal close-modal}])
 
 (defmethod ->message constants/content-type-sticker [{:keys [content] :as message}]
   [message-content-wrapper message

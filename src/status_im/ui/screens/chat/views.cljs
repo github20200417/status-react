@@ -20,7 +20,6 @@
             [status-im.ui.components.topbar :as topbar]
             [status-im.ui.screens.chat.group :as chat.group]
             [status-im.ui.screens.chat.message.gap :as gap]
-            [status-im.utils.profiler :as profiler]
             [status-im.ui.screens.chat.message.datemark :as message-datemark])
   (:require-macros [status-im.utils.views :refer [defview letsubs]]))
 
@@ -147,18 +146,17 @@
       :data                         messages
       :inverted                     true
       :render-fn                    (fn [{:keys [outgoing type] :as message} idx]
-                                      [profiler/perf {:label (str "Messsage" type)}
-                                       (if (= type :datemark)
-                                         [message-datemark/chat-datemark (:value message)]
-                                         (if (= type :gap)
-                                           [gap/gap message idx messages-list-ref]
+                                      (if (= type :datemark)
+                                        [message-datemark/chat-datemark (:value message)]
+                                        (if (= type :gap)
+                                          [gap/gap message idx messages-list-ref]
                                         ; message content
-                                           [message/chat-message
-                                            (assoc message
-                                                   :incoming-group (and group-chat (not outgoing))
-                                                   :group-chat group-chat
-                                                   :public? public?
-                                                   :current-public-key current-public-key)]))])
+                                          [message/chat-message
+                                           (assoc message
+                                                  :incoming-group (and group-chat (not outgoing))
+                                                  :group-chat group-chat
+                                                  :public? public?
+                                                  :current-public-key current-public-key)])))
       :on-viewable-items-changed    on-viewable-items-changed
       :on-end-reached               #(re-frame/dispatch [:chat.ui/load-more-messages])
       :on-scroll-to-index-failed    #() ;;don't remove this

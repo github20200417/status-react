@@ -173,7 +173,8 @@
                            (reset! visible true))]
     (fn [{:keys [message render on-reply on-copy send-emoji]}]
       [:<>
-       [rn/view {:ref ref}
+       [rn/view {:ref         ref
+                 :collapsable false}
         [animated/view {:style {:opacity (animated/mix animation 1 0)}}
          [render message {:modal         false
                           :on-long-press (fn []
@@ -199,4 +200,5 @@
                        :send-emoji     (fn [emoji]
                                          (on-close)
                                          (js/setTimeout #(send-emoji emoji) animation-duration))}
-         [render message {:modal true}]]]])))
+         [render message {:modal       true
+                          :close-modal on-close}]]]])))
