@@ -2,6 +2,7 @@
   (:require [status-im.react-native.resources :as resources]
             [cljs-bean.core :as bean]
             [status-im.i18n :as i18n]
+            [status-im.constants :as constants]
             [reagent.core :as reagent]
             [quo.react-native :as rn]
             [quo.react :as react]
@@ -19,12 +20,12 @@
 (def translate-x   27)
 (def translate-y   -24)
 
-(def reactions [[:love (:love resources/reactions)]
-                [:thumbs-up (:thumbs-up resources/reactions)]
-                [:thumbs-down (:thumbs-down resources/reactions)]
-                [:laugh (:laugh resources/reactions)]
-                [:sad (:sad resources/reactions)]
-                [:angry (:angry resources/reactions)]])
+(def reactions [[constants/emoji-reaction-love (:love resources/reactions)]
+                [constants/emoji-reaction-thumbs-up (:thumbs-up resources/reactions)]
+                [constants/emoji-reaction-thumbs-down (:thumbs-down resources/reactions)]
+                [constants/emoji-reaction-laugh (:laugh resources/reactions)]
+                [constants/emoji-reaction-sad (:sad resources/reactions)]
+                [constants/emoji-reaction-angry (:angry resources/reactions)]])
 
 (defn measure-in-window [ref cb]
   (.measureInWindow ^js ref cb))

@@ -14,6 +14,15 @@
 (def content-type-command 5)
 (def content-type-system-text 6)
 (def content-type-image 7)
+(def content-type-emoji-reaction 8)
+(def content-type-emoji-reaction-retraction 8)
+
+(def emoji-reaction-love 1)
+(def emoji-reaction-thumbs-up  2)
+(def emoji-reaction-thumbs-down  3)
+(def emoji-reaction-laugh 4)
+(def emoji-reaction-sad 5)
+(def emoji-reaction-angry 6)
 
 (def message-type-one-to-one 1)
 (def message-type-public-group 2)

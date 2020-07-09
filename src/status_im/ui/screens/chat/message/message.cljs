@@ -5,6 +5,7 @@
             [status-im.ui.components.colors :as colors]
             [status-im.ui.components.icons.vector-icons :as vector-icons]
             [status-im.ui.components.react :as react]
+            [status-im.chat.models.input :as models]
             [status-im.ui.screens.chat.message.command :as message.command]
             [status-im.ui.screens.chat.photos :as photos]
             [status-im.ui.screens.chat.sheets :as sheets]
@@ -330,8 +331,10 @@
    [unknown-content-type message]])
 
 (defn chat-message [message]
-  [reactions/with-reaction-picker {:message    message
-                                   :on-reply   #(re-frame/dispatch [:chat.ui/reply-to-message message])
-                                   :on-copy    #(react/copy-to-clipboard (get-in message [:content :text]))
-                                   :send-emoji println
-                                   :render     ->message}])
+  [reactions/with-reaction-picker
+   {:message    message
+    :on-reply   #(re-frame/dispatch [:chat.ui/reply-to-message message])
+    :on-copy    #(react/copy-to-clipboard (get-in message [:content :text]))
+    :send-emoji #(re-frame/dispatch [::models/send-emoji-reaction {:message-id (:message-id message)
+                                                                   :emoji-id   %}])
+    :render     ->message}])

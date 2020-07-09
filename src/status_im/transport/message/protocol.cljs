@@ -12,18 +12,23 @@
                                          image-path
                                          message-type
                                          sticker
-                                         content-type]
-                                  :as message}]
-  {::json-rpc/call [{:method (json-rpc/call-ext-method
-                              (get-in cofx [:db :multiaccount :waku-enabled])
-                              "sendChatMessage")
-                     :params [{:chatId chat-id
-                               :text text
-                               :responseTo response-to
-                               :ensName ens-name
-                               :imagePath image-path
-                               :sticker sticker
-                               :contentType content-type}]
+                                         reaction
+                                         content-type
+                                         emoji-reaction
+                                         emoji-reaction-retraction]
+                                  :as   message}]
+  {::json-rpc/call [{:method     (json-rpc/call-ext-method
+                                  (get-in cofx [:db :multiaccount :waku-enabled])
+                                  "sendChatMessage")
+                     :params     [{:chatId                  chat-id
+                                   :text                    text
+                                   :responseTo              response-to
+                                   :ensName                 ens-name
+                                   :imagePath               image-path
+                                   :sticker                 sticker
+                                   :emojiReaction           emoji-reaction
+                                   :emojiReactionRetraction emoji-reaction-retraction
+                                   :contentType             content-type}]
                      :on-success
                      #(re-frame/dispatch [:transport/message-sent % 1])
                      :on-failure #(log/error "failed to send a message" %)}]})
