@@ -152,20 +152,6 @@
        :accessibility-label :delete-transaccent-button
        :on-press            #(hide-sheet-and-dispatch [:chat.ui/delete-message chat-id message-id])}]]))
 
-(defn sticker-long-press [{:keys [from]}]
-  (fn []
-    (let [photo        @(re-frame/subscribe [:chats/photo-path from])
-          contact-name @(re-frame/subscribe [:contacts/contact-name-by-identity from])]
-      [react/view
-       [quo/list-item
-        {:theme               :accent
-         :icon                [chat-icon/contact-icon-contacts-tab photo]
-         :title               contact-name
-         :subtitle            (i18n/label :t/view-profile)
-         :accessibility-label :view-chat-details-button
-         :chevron             true
-         :on-press            #(hide-sheet-and-dispatch  [:chat.ui/show-profile from])}]])))
-
 (defn image-long-press [{:keys [content identicon from outgoing] :as message} from-preview?]
   (fn []
     (let [contact-name @(re-frame/subscribe [:contacts/contact-name-by-identity from])]

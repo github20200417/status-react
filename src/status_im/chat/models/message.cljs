@@ -149,6 +149,7 @@
     constants/content-type-emoji-reaction
     {:db (assoc-in db [:reactions chat-id reacted-to emoji-id message-id] message)}
 
+    ;; FIXME: If first I receive a retraction then the emoji it will not remove the emoji
     constants/content-type-emoji-reaction-retraction
     {:db (update-in db [:reactions chat-id reacted-to emoji-id] dissoc retract-id)}))
 
