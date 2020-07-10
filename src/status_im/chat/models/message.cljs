@@ -145,6 +145,7 @@
   ;; FIXME: Sync keys with status-go
   [{:keys [db]} {:keys [chat-id reacted-to emoji-id content-type retract-id message-id]
                  :as   message}]
+  (println message)
   (case content-type
     constants/content-type-emoji-reaction
     {:db (assoc-in db [:reactions chat-id reacted-to emoji-id message-id] message)}

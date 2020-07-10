@@ -140,18 +140,17 @@
   [{{:keys [current-chat-id] :as db} :db :as cofx} {:keys [message-id emoji-id]}]
   (chat.message/send-message cofx {:chat-id        current-chat-id
                                    :content-type   constants/content-type-emoji-reaction
-                                   :emoji-reaction {:messageId message-id
-                                                    :emojiId   emoji-id}
-                                   :text           "Update to latest version to see a nice emoji reacion!"}))
+                                   :emoji-reaction {:message_id message-id
+                                                    :type       emoji-id}
+                                   :text           "Update to latest version to see a nice emoji reaction!"}))
 
 (fx/defn send-retract-emoji-reaction-message
   {:events [::send-emoji-reaction-retraction]}
   [{{:keys [current-chat-id] :as db} :db :as cofx} {:keys [message-id emoji-id]}]
   (chat.message/send-message cofx {:chat-id        current-chat-id
                                    :content-type   constants/content-type-emoji-reaction-retraction
-                                   :emoji-reaction {:messageId message-id
-                                                    :emojiId   emoji-id}
-                                   :text           "Update to latest version to see a nice emoji reacion!"}))
+                                   :emoji-reaction {:emoji_reaction_id message-id}
+                                   :text           "Update to latest version to see a nice emoji reaction!"}))
 
 (fx/defn send-current-message
   "Sends message from current chat input"
