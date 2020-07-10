@@ -1,5 +1,6 @@
 (ns status-im.acquisition.core
   (:require [re-frame.core :as re-frame]
+            [reagent.ratom :refer [make-reaction]]
             [status-im.utils.fx :as fx]
             [status-im.ethereum.json-rpc :as json-rpc]
             [status-im.popover.core :as popover]
@@ -7,9 +8,13 @@
             [status-im.utils.types :as types]
             [status-im.utils.platform :as platform]
             [status-im.ethereum.core :as ethereum]
+            [status-im.ethereum.contracts :as contracts]
+            [status-im.utils.money :as money]
             [taoensso.timbre :as log]
             ["react-native-device-info" :refer [getInstallReferrer]]
             ["@react-native-community/async-storage" :default async-storage]))
+
+;; {"inputs":[],"name":"getPack","outputs":[{"internalType":"address","name":"stickerMarket","type":"address"},{"internalType":"uint256","name":"ethAmount","type":"uint256"},{"internalType":"address[]","name":"tokens","type":"address[]"},{"internalType":"uint256[]","name":"tokenAmounts","type":"uint256[]"},{"internalType":"uint256[]","name":"stickerPackIds","type":"uint256[]"}],"stateMutability":"view","type":"function"
 
 (def acquisition-gateway "https://test-referral.status.im")
 
@@ -64,7 +69,6 @@
        (.catch (fn [error]
                  (log/error "[async-storage]" error))))))
 
-
 (fx/defn referrer-registered
   {:events [::referrer-registered]}
   [cofx {:keys [type]}]
@@ -83,12 +87,11 @@
   (let [payload {:chat_key    (get-in db [:multiaccount :public-key])
                  :address     (ethereum/default-address db)
                  :invite_code (get-in db [:acquisition :referrer])}]
-   (if  (= decision :accept)
-     (handle-acquisition cofx {:message    payload
-                               :type       :clicks
-                               :on-success ::referrer-registered})
-     {::set-referrer-decision "decline"})))
-
+    (if  (= decision :accept)
+      (handle-acquisition cofx {:message    payload
+                                :type       :clicks
+                                :on-success ::referrer-registered})
+      {::set-referrer-decision "decline"})))
 
 (fx/defn has-referrer
   {:events [::has-referrer]}
@@ -124,3 +127,31 @@
                  :failure-event-creator (fn [error]
                                           (println "Error" error)
                                           [::on-error (types/json->clj error)])}}))
+;; Starter pack
+
+(fx/defn get-starter-pack-amount
+  {:events [::starter-pack-amount]}
+  [{:keys [db]} [_ eth-amount tokens tokens-amount sticker-packs]]
+  ;; TODO: Fetch all tokens names and symbols
+  {:db (assoc-in db [:acquisition :starter-pack :pack]
+                 {:eth-amount    (money/wei->ether eth-amount)
+                  :tokens        tokens
+                  :tokens-amount (mapv money/wei->ether tokens-amount)
+                  :sticker-packs sticker-packs})})
+
+(fx/defn starter-pack
+  {:events [::starter-pack]}
+  [{:keys [db]}]
+  (let [contract (contracts/get-address db :status/acquisition)]
+    {::json-rpc/eth-call [{:contract   contract
+                           :method     "getPack()"
+                           :outputs    ["address" "uint256" "address[]" "uint256[]" "uint256[]"]
+                           :on-success #(re-frame/dispatch [::starter-pack-amount (vec %)])}]}))
+
+(re-frame/reg-sub-raw
+ ::starter-pack
+ (fn [db]
+   (re-frame/dispatch [::starter-pack])
+   (make-reaction
+    (fn []
+      (get-in @db [:acquisition :starter-pack :pack])))))

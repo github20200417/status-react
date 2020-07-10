@@ -17,7 +17,7 @@
    {:testnet "0xf852198d0385c4b871e0b91804ecd47c6ba97351"
     :mainnet "0x110101156e8F0743948B2A61aFcf3994A8Fb172e"}
    :status/acquisition
-   {:rinkeby "0x75D370306139E22cBA52ec59408e9d85cAb9aa23"}})
+   {:rinkeby "0xD72E51a03d37eaBDe17157A39a0B43ac6919BEBf"}})
 
 (defn get-address
   [db contract]

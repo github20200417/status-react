@@ -10,7 +10,6 @@
             [status-im.utils.universal-links.core :as universal-links]
             [status-im.acquisition.core :as acquisition]))
 
-(def get-link "get.status.im")
 (def privacy-policy-link "get.status.im")
 
 (re-frame/reg-fx
@@ -42,9 +41,18 @@
    {:contract   contract
     :method     "getReferralReward(address)"
     :params     [address]
-    ;; [amount maxThreshold attribCount]
-    :outputs    ["uint256" "uint256" "uint256"]
-    :on-success on-success}))
+    ;; [uint ethAmount, uint tokenLen, uint maxThreshold, uint attribCount]
+    :outputs    ["uint256" "uint256" "uint256" "uint256"]
+    :on-success (fn [[eth-amount tokens-count max-threshold attrib-count]]
+                  (on-success :reward [eth-amount tokens-count max-threshold attrib-count])
+                  (dotimes [id tokens-count]
+                    (json-rpc/eth-call
+                     {:contract   contract
+                      :method     "getReferralRewardTokens(address,uint256)"
+                      :params     [address id]
+                      :outputs    ["address" "uint256"]
+                      :on-success (fn [token-data]
+                                    (on-success :token token-data))})))}))
 
 (re-frame/reg-fx
  ::get-rewards
@@ -54,25 +62,34 @@
 
 (fx/defn default-reward-success
   {:events [::default-reward-success]}
-  [{:keys [db]} [amount max-threshold attrib-count]]
-  {:db (assoc-in db [:acquisition :referral] {:amount        amount
-                                              :max-threshold max-threshold
-                                              :attrib-count  attrib-count})})
+  [{:keys [db]} type data]
+  (if (= :reward type)
+    (let [[eth-amount tokens-count max-threshold attrib-count] data]
+      {:db (assoc-in db [:acquisition :referral-reward] {:eth-amount    eth-amount
+                                                         :tokens-count  tokens-count
+                                                         :max-threshold max-threshold
+                                                         :attrib-count  attrib-count})})
+    (let [[address amount] data]
+      {:db (assoc-in db [:acquisition :referral-reward :tokens address] amount)})))
 
 (fx/defn get-reward-success
   {:events [::get-reward-success]}
-  [{:keys [db]} account [amount max-threshold attrib-count]]
-  {:db (assoc-in db [:acquisition :accounts account]
-                 {:amount        amount
-                  :max-threshold max-threshold
-                  :attrib-count  attrib-count})})
+  [{:keys [db]} account type data]
+  (if (= :reward type)
+    (let [[eth-amount _ max-threshold attrib-count] data]
+      {:db (assoc-in db [:acquisition :accounts account] {:eth-amount    eth-amount
+                                                          :max-threshold max-threshold
+                                                          :attrib-count  attrib-count})})
+    (let [[address amount] data]
+      {:db (assoc-in db [:acquisition :accounts account :tokens address] amount)})))
 
 (fx/defn get-default-reward
   {:events [::get-default-reward]}
   [{:keys [db]}]
   {::get-rewards [{:contract   (contracts/get-address db :status/acquisition)
                    :address    (ethereum/default-address db)
-                   :on-success #(re-frame/dispatch [::default-reward-success %])}]})
+                   :on-success (fn [type data]
+                                 (re-frame/dispatch [::default-reward-success type data]))}]})
 
 (re-frame/reg-sub-raw
  ::default-reward
@@ -80,7 +97,7 @@
    (re-frame/dispatch [::get-default-reward])
    (make-reaction
     (fn []
-      (get-in @db [:acquisition :referral :amount])))))
+      (get-in @db [:acquisition :referral-reward])))))
 
 (fx/defn go-to-invite
   {:events [::open-invite]}
@@ -91,7 +108,8 @@
               {::get-rewards (mapv (fn [{:keys [address]}]
                                      {:address    address
                                       :contract   contract
-                                      :on-success #(re-frame/dispatch [::get-reward-success address %])})
+                                      :on-success (fn [type data]
+                                                    (re-frame/dispatch [::get-reward-success address type data]))})
                                    accounts)}
               (navigation/navigate-to-cofx :referral-invite nil))))
 

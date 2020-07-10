@@ -9,7 +9,6 @@
             [status-im.ui.components.react :as react]
             [status-im.ui.screens.home.styles :as styles]
             [status-im.ui.screens.home.views.inner-item :as inner-item]
-            [status-im.ui.components.list-selection :as list-selection]
             [status-im.ui.components.colors :as colors]
             [status-im.ui.screens.add-new.new-public-chat.view :as new-public-chat]
             [quo.core :as quo]

@@ -81,8 +81,7 @@
    [react/text
     {:style (styles/no-contact-text)}
     no-contacts]
-   (when-not platform/desktop?
-     [invite/button])])
+   [invite/button]])
 
 (defn filter-contacts [filter-text contacts]
   (let [lower-filter-text (string/lower-case (str filter-text))
