@@ -7,6 +7,7 @@
             [status-im.ethereum.core :as ethereum]
             [status-im.ui.components.react :as react]
             [status-im.navigation :as navigation]
+            [status-im.utils.universal-links.core :as universal-links]
             [status-im.acquisition.core :as acquisition]))
 
 (def get-link "get.status.im")
@@ -19,16 +20,21 @@
 
 (fx/defn share-link
   {:events [::share-link]}
-  [_ response]
-  (let [invite-id (get response :invite-id)
-        message   (str "Hey join me on Status:" get-link invite-id)]
+  [{:keys [db]} response]
+  (let [{:keys [public-key preferred-name]} (get db :multiaccount)
+        invite-id                           (get response :invite_code)
+        profile-link                        (universal-links/generate-link :user :external
+                                                                           (or preferred-name public-key))
+        share-link                          (str profile-link "?invite=" invite-id)
+        message                             (str "Hey join me on Status: " share-link)]
     {::share {:message message}}))
 
 (fx/defn generate-invite
   {:events [::generate-invite]}
-  [cofx {:keys [address]}]
+  [{:keys [db] :as cofx} {:keys [address]}]
   (acquisition/handle-acquisition cofx
-                                  {:message    {:address address}
+                                  {:message    {:address             address
+                                                :interaction_address (get-in db [:multiaccount :public-key])}
                                    :on-success ::share-link}))
 
 (defn- get-reward [contract address on-success]

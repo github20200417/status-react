@@ -11,13 +11,13 @@
             ["react-native-device-info" :refer [getInstallReferrer]]
             ["@react-native-community/async-storage" :default async-storage]))
 
-(def acquisition-gateway "https://get.status.im")
+(def acquisition-gateway "https://test-referral.status.im")
 
 (def acquisition-routes {:clicks        (str acquisition-gateway "/clicks")
                          :registrations (str acquisition-gateway "/registrations")})
 
 (defn get-url [type referral]
-  (when (= type :clicks)
+  (if (= type :clicks)
     (str (get acquisition-routes :clicks) "/" referral)
     (get acquisition-routes :registrations)))
 
@@ -82,7 +82,7 @@
   [{:keys [db] :as cofx} decision]
   (let [payload {:chat_key    (get-in db [:multiaccount :public-key])
                  :address     (ethereum/default-address db)
-                 :invite_code referrer}]
+                 :invite_code (get-in db [:acquisition :referrer])}]
    (if  (= decision :accept)
      (handle-acquisition cofx {:message    payload
                                :type       :clicks
@@ -97,7 +97,7 @@
     {:http-get {:url                   (get-url :clicks referrer)
                 :success-event-creator (fn [response]
                                          (println response)
-                                         [::referrer-registered response])}}))
+                                         [::referrer-registered referrer response])}}))
 
 (fx/defn app-setup
   {}
@@ -110,15 +110,17 @@
    {:keys [chat-key message on-success type]
     :or   {type :registrations}}
    sig]
-  (let [payload {:chat_key chat-key
-                 :msg      message
-                 :sig      sig
-                 :version  2}
+  (let [payload  {:chat_key chat-key
+                  :msg      message
+                  :sig      sig
+                  :version  2}
         referral (get message :invite_code)]
-    {:http-post {:url                   (get-url acquisition-routes type refferal)
+    (println (get-url type referral) (types/clj->json payload))
+    {:http-post {:url                   (get-url type referral)
                  :opts                  {:headers {"Content-Type" "application/json"}}
                  :data                  (types/clj->json payload)
                  :success-event-creator (fn [response]
                                           [on-success (types/json->clj (get response :response-body))])
                  :failure-event-creator (fn [error]
+                                          (println "Error" error)
                                           [::on-error (types/json->clj error)])}}))

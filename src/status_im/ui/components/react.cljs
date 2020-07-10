@@ -213,7 +213,7 @@
 
 (defn get-from-clipboard [clbk]
   (let [clipboard-contents (.getString  ^js Clipboard)]
-    (.then clipboard-contents #(clb k %))))
+    (.then clipboard-contents #(clbk %))))
 
 ;; KeyboardAvoidingView
 
