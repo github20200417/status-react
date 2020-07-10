@@ -184,6 +184,7 @@
 (reg-root-key-sub :multiaccounts/loading :multiaccounts/loading)
 
 (reg-root-key-sub ::messages :messages)
+(reg-root-key-sub ::reactions :reactions)
 (reg-root-key-sub ::message-lists :message-lists)
 (reg-root-key-sub ::pagination-info :pagination-info)
 
@@ -663,6 +664,23 @@
  :<- [:chats/current-chat-id]
  (fn [[messages chat-id]]
    (get messages chat-id {})))
+
+(re-frame/reg-sub
+ :chats/current-chat-reactions
+ :<- [::reactions]
+ :<- [:chats/current-chat-id]
+ (fn [[reactions chat-id]]
+   (get reactions chat-id)))
+
+(re-frame/reg-sub
+ :chats/message-reactions
+ :<- [:chats/current-chat-reactions]
+ (fn [[reactions] message-id]
+   (mapv (fn [[emoji-id messages]]
+           {:emoji-id emoji-id
+            :own      false ; FIXME
+            :quantity (count messages)})
+         (get reactions message-id))))
 
 (re-frame/reg-sub
  :chats/messages-gaps

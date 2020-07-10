@@ -1,6 +1,7 @@
 (ns status-im.ui.screens.chat.message.reactions
   (:require [status-im.react-native.resources :as resources]
             [cljs-bean.core :as bean]
+            [re-frame.core :as re-frame]
             [status-im.i18n :as i18n]
             [status-im.ui.screens.chat.styles.photos :as photos]
             [status-im.constants :as constants]
@@ -223,33 +224,35 @@
                            (reset! position pos)
                            (reset! visible true))]
     (fn [{:keys [message render on-reply on-copy send-emoji]}]
-      [:<>
-       [rn/view {:ref         ref
-                 :collapsable false}
-        [animated/view {:style {:opacity (animated/mix animation 1 0)}}
-         [render message {:modal         false
-                          :on-long-press (fn []
-                                           (get-picker-position ref on-open))}]]]
-       [rn/modal {:visible          @visible
-                  :on-request-close on-close
-                  :on-show          (fn []
-                                      (js/requestAnimationFrame
-                                       #(animated/set-value animated-state 1)))
-                  :transparent      true}
-        [picker-modal {:outgoing       (:outgoing message)
-                       :animation      animation
-                       :spring         spring-animation
-                       :top            (:top @position)
-                       :message-height (:height @position)
-                       :on-close       on-close
-                       :on-reply       (fn []
-                                         (on-close)
-                                         (js/setTimeout on-reply animation-duration))
-                       :on-copy        (fn []
-                                         (on-close)
-                                         (js/setTimeout on-copy animation-duration))
-                       :send-emoji     (fn [emoji]
-                                         (on-close)
-                                         (js/setTimeout #(send-emoji emoji) animation-duration))}
-         [render message {:modal       true
-                          :close-modal on-close}]]]])))
+      (let [reactions @(re-frame/subscribe [:chats/message-reactions (:message-id message)])]
+        [:<>
+         [animated/view {:style {:opacity (animated/mix animation 1 0)}}
+          [rn/view {:ref         ref
+                    :collapsable false}
+           [render message {:modal         false
+                            :on-long-press (fn []
+                                             (get-picker-position ref on-open))}]]
+          [message-reactions message reactions]]
+         [rn/modal {:visible          @visible
+                    :on-request-close on-close
+                    :on-show          (fn []
+                                        (js/requestAnimationFrame
+                                         #(animated/set-value animated-state 1)))
+                    :transparent      true}
+          [picker-modal {:outgoing       (:outgoing message)
+                         :animation      animation
+                         :spring         spring-animation
+                         :top            (:top @position)
+                         :message-height (:height @position)
+                         :on-close       on-close
+                         :on-reply       (fn []
+                                           (on-close)
+                                           (js/setTimeout on-reply animation-duration))
+                         :on-copy        (fn []
+                                           (on-close)
+                                           (js/setTimeout on-copy animation-duration))
+                         :send-emoji     (fn [emoji]
+                                           (on-close)
+                                           (js/setTimeout #(send-emoji emoji) animation-duration))}
+           [render message {:modal       true
+                            :close-modal on-close}]]]]))))
