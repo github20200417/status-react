@@ -5,6 +5,7 @@
             [status-im.chat.models.message-content :as message-content]
             [status-im.chat.models.message-list :as message-list]
             [status-im.constants :as constants]
+            [status-im.chat.models.reactions :as reactions]
             [status-im.data-store.messages :as data-store.messages]
             [status-im.ethereum.json-rpc :as json-rpc]
             [status-im.multiaccounts.model :as multiaccounts.model]
@@ -81,9 +82,11 @@
       (if (or (not @view.state/first-not-visible-item)
               (<= (:clock-value @view.state/first-not-visible-item)
                   clock-value))
-        (add-message cofx {:message       message
-                           :seen-by-user? (and current-chat?
-                                               (= view-id :chat))})
+        (if (reactions/reaction-message? message)
+          (reactions/process-reactions cofx message)
+          (add-message cofx {:message       message
+                             :seen-by-user? (and current-chat?
+                                                 (= view-id :chat))}))
         ;; Not in the current view, set all-loaded to false
         ;; and offload to db and update cursor if necessary
         {:db (cond-> (assoc-in db [:chats chat-id :all-loaded?] false)
@@ -101,11 +104,6 @@
   (let [{:keys [deleted-at-clock-value]}
         (get-in db [:chats chat-id])]
     (>= deleted-at-clock-value clock-value)))
-
-(defn- reaction-message? [{:keys [content-type]}]
-  (#{constants/content-type-emoji-reaction
-     constants/content-type-emoji-reaction-retraction}
-   content-type))
 
 (defn extract-chat-id
   "Validate and return a valid chat-id"
@@ -141,35 +139,20 @@
                         assoc
                         :unviewed-messages-count (inc current-count))}))))
 
-(fx/defn process-reactions
-  ;; FIXME: Sync keys with status-go
-  [{:keys [db]} {:keys [chat-id reacted-to emoji-id content-type retract-id message-id]
-                 :as   message}]
-  (println message)
-  (case content-type
-    constants/content-type-emoji-reaction
-    {:db (assoc-in db [:reactions chat-id reacted-to emoji-id message-id] message)}
-
-    ;; FIXME: If first I receive a retraction then the emoji it will not remove the emoji
-    constants/content-type-emoji-reaction-retraction
-    {:db (update-in db [:reactions chat-id reacted-to emoji-id] dissoc retract-id)}))
-
 (fx/defn receive-one
   [{:keys [db] :as cofx} {:keys [message-id] :as message}]
   (when-let [chat-id (extract-chat-id cofx message)]
     (let [message-with-chat-id (assoc message :chat-id chat-id)]
       (when-not (earlier-than-deleted-at? cofx message-with-chat-id)
-        (if (reaction-message? message)
-          (process-reactions cofx message-with-chat-id)
-          (if (message-loaded? cofx message-with-chat-id)
-            ;; If the message is already loaded, it means it's an update, that
-            ;; happens when a message that was missing a reply had the reply
-            ;; coming through, in which case we just insert the new message
-            {:db (assoc-in db [:messages chat-id message-id] message-with-chat-id)}
-            (fx/merge cofx
-                      (add-received-message message-with-chat-id)
-                      (update-unviewed-count message-with-chat-id)
-                      (chat-model/join-time-messages-checked chat-id))))))))
+        (if (message-loaded? cofx message-with-chat-id)
+          ;; If the message is already loaded, it means it's an update, that
+          ;; happens when a message that was missing a reply had the reply
+          ;; coming through, in which case we just insert the new message
+          {:db (assoc-in db [:messages chat-id message-id] message-with-chat-id)}
+          (fx/merge cofx
+                    (add-received-message message-with-chat-id)
+                    (update-unviewed-count message-with-chat-id)
+                    (chat-model/join-time-messages-checked chat-id)))))))
 
 ;;TODO currently we process every message, we need to precess them by batches
 ;;or better move processing to status-go

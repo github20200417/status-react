@@ -1,6 +1,7 @@
 (ns status-im.chat.models.message-list
   (:require [status-im.constants :as constants]
             [status-im.utils.datetime :as time]
+            [status-im.chat.models.reactions :as reactions]
             ["functional-red-black-tree" :as rb-tree]))
 
 (defn- add-datemark [{:keys [whisper-timestamp] :as msg}]
@@ -170,8 +171,10 @@
     (update-message tree prepared-message)))
 
 (defn add [message-list message]
-  (insert-message (or message-list (rb-tree compare-fn))
-                  (prepare-message message)))
+  (if (reactions/reaction-message? message)
+    message-list
+    (insert-message (or message-list (rb-tree compare-fn))
+                    (prepare-message message))))
 
 (defn add-many [message-list messages]
   (reduce add

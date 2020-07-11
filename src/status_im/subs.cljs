@@ -670,12 +670,12 @@
  :<- [::reactions]
  :<- [:chats/current-chat-id]
  (fn [[reactions chat-id]]
-   (get reactions chat-id)))
+   (get reactions chat-id {})))
 
 (re-frame/reg-sub
  :chats/message-reactions
  :<- [:chats/current-chat-reactions]
- (fn [[reactions] message-id]
+ (fn [reactions [_ message-id]]
    (mapv (fn [[emoji-id messages]]
            {:emoji-id emoji-id
             :own      false ; FIXME
