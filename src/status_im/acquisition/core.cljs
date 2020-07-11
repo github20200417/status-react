@@ -45,6 +45,8 @@
                        :on-success #(re-frame/dispatch [::call-acquisition-gateway
                                                         {:chat-key   (get-in db [:multiaccount :public-key])
                                                          :message    msg
+                                                         :method     "POST"
+                                                         :url        (get-url :registrations nil)
                                                          :on-success on-success} %])}]}))
 
 (re-frame/reg-fx
@@ -62,17 +64,18 @@
    (-> ^js async-storage
        (.getItem referrer-decision-key)
        (.then (fn [^js data]
-                (println data)
-                (-> (getInstallReferrer)
-                    (.then (fn [referrer]
-                             (re-frame/dispatch [::has-referrer data referrer]))))))
+                (re-frame/dispatch [::has-referrer data "test-id"])
+                (when-not data
+                  (-> (getInstallReferrer)
+                      (.then (fn [referrer]
+                               (re-frame/dispatch [::has-referrer data referrer])))))))
        (.catch (fn [error]
                  (log/error "[async-storage]" error))))))
 
 (fx/defn referrer-registered
   {:events [::referrer-registered]}
   [cofx {:keys [type]}]
-  (when (= type "advertiser")
+  (when true ;; (= type "advertiser")
     (popover/show-popover cofx {:prevent-closing? true
                                 :view             :accept-invite})))
 
@@ -82,50 +85,53 @@
   {::set-referrer-decision "accept"})
 
 (fx/defn advertiser-decide
-  {:events [::advertiser-decide]}
+  {:events [::advertiser-decision]}
   [{:keys [db] :as cofx} decision]
-  (let [payload {:chat_key    (get-in db [:multiaccount :public-key])
-                 :address     (ethereum/default-address db)
-                 :invite_code (get-in db [:acquisition :referrer])}]
-    (if  (= decision :accept)
-      (handle-acquisition cofx {:message    payload
-                                :type       :clicks
-                                :on-success ::referrer-registered})
-      {::set-referrer-decision "decline"})))
+  (let [referral (get-in db [:acquisition :referrer])
+        payload  {:chat_key    (get-in db [:multiaccount :public-key])
+                  :address     (ethereum/default-address db)
+                  :invite_code referral}]
+    (fx/merge cofx
+              (popover/hide-popover)
+              (if (= decision :accept)
+                (handle-acquisition {:message    payload
+                                     :method     "PATCH"
+                                     :type       (get-url :clicks referral)
+                                     :on-success ::referrer-registered})
+                {::set-referrer-decision "decline"}))))
 
 (fx/defn has-referrer
   {:events [::has-referrer]}
   [{:keys [db] :as cofx} decision referrer]
-  (when (nil? decision)
+  (when (and referrer (nil? decision))
     {:http-get {:url                   (get-url :clicks referrer)
                 :success-event-creator (fn [response]
-                                         (println response)
                                          [::referrer-registered referrer response])}}))
 
 (fx/defn app-setup
   {}
-  [_]
-  {::get-referrer nil})
+  [cofx]
+  (fx/merge cofx
+            {::get-referrer nil}
+            (referrer-registered nil)
+            ))
 
 (fx/defn call-acquisition-gateway
   {:events [::call-acquisition-gateway]}
   [cofx
-   {:keys [chat-key message on-success type]
-    :or   {type :registrations}}
+   {:keys [chat-key message on-success type url method]}
    sig]
-  (let [payload  {:chat_key chat-key
-                  :msg      message
-                  :sig      sig
-                  :version  2}
-        referral (get message :invite_code)]
-    (println (get-url type referral) (types/clj->json payload))
-    {:http-post {:url                   (get-url type referral)
+  (let [payload {:chat_key chat-key
+                 :msg      message
+                 :sig      sig
+                 :version  2}]
+    {:http-post {:url                   url
+                 :method                method
                  :opts                  {:headers {"Content-Type" "application/json"}}
                  :data                  (types/clj->json payload)
                  :success-event-creator (fn [response]
                                           [on-success (types/json->clj (get response :response-body))])
                  :failure-event-creator (fn [error]
-                                          (println "Error" error)
                                           [::on-error (types/json->clj error)])}}))
 ;; Starter pack
 

@@ -287,8 +287,8 @@
               (if login-only?
                 (login-only-events key-uid password save-password?)
                 (create-only-events))
-              (when first-account?
-                (acquisition/app-setup))
+              (when true ;; first-account?
+                    (acquisition/app-setup))
               (when recovering?
                 (navigation/navigate-to-cofx :tabs {:screen :chat-stack
                                                     :params {:screen :home}})))))
