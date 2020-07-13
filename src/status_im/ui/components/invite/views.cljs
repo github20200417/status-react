@@ -13,6 +13,7 @@
             [status-im.ui.components.topbar :as topbar]
             [status-im.ui.components.invite.events :as events]
             [status-im.acquisition.core :as acquisition]
+            [status-im.react-native.resources :as resources]
             [quo.react-native :as rn]))
 
 ;; Select account sheet
@@ -109,6 +110,54 @@
          :subtitle (utils/get-shortened-checksum-address (:address account))
          :on-press #(reset! visible true)}]])))
 
+(defn reward-item [data]
+  [rn/view {}
+   [rn/view {:style {:padding-horizontal 16
+                     :padding-top        12
+                     :padding-bottom     4}}
+    [quo/text {:weight :medium}
+     [quo/text {:color  :link
+                :weight :inherit}
+      (i18n/label :t/invite-reward-you)]
+     (i18n/label :t/invite-reward-you-name)]]
+   [rn/view {:style {:background-color    (:interactive-02 @colors/theme)
+                     :padding             16
+                     :flex-direction      :row
+                     :border-bottom-width 1
+                     :border-top-width    1
+                     :border-color        (:border-02 @colors/theme)}}
+    [rn/view {:style {:padding-right 16}}
+     [rn/image {:source (resources/get-image :referral-bonus)}]]
+    [rn/view
+     [quo/text {}
+      (i18n/label :t/invite-reward-you-description)]
+     [quo/text
+      (str "FIXME: " data)]]]])
+
+(defn friend-reward-item [data]
+  [rn/view {}
+   [rn/view {:style {:padding-horizontal 16
+                     :padding-top        12
+                     :padding-bottom     4}}
+    [quo/text {:weight :medium}
+     [quo/text {:color  :link
+                :weight :inherit}
+      (i18n/label :t/invite-reward-friend)]
+     (i18n/label :t/invite-reward-friend-name)]]
+   [rn/view {:style {:background-color    (:interactive-02 @colors/theme)
+                     :padding             16
+                     :flex-direction      :row
+                     :border-bottom-width 1
+                     :border-top-width    1
+                     :border-color        (:border-02 @colors/theme)}}
+    [rn/view {:style {:padding-right 16}}
+     [rn/image {:source (resources/get-image :referral-bonus)}]]
+    [rn/view
+     [quo/text {}
+      (i18n/label :t/invite-reward-friend-description)]
+     [quo/text (str "FIXME: " data)]]]])
+
+
 (defn referral-invite []
   (let [account* (reagent/atom nil)]
     (fn []
@@ -122,14 +171,19 @@
                          :show-border? true
                          :title        (i18n/label :t/invite-friends)}]
          [rn/scroll-view {:flex 1}
-          [quo/text {}
-           (str "My reward: " reward)]
-          [quo/text
-           (str "User starte pack: " starter-pack)]
-          [referral-steps]
+          [reward-item reward]
+          [friend-reward-item starter-pack]
           [referral-account {:account        account
                              :change-account #(reset! account* %)
-                             :accounts       accounts}]]
+                             :accounts       accounts}]
+          [referral-steps]
+          [rn/view {:padding-vertical 10}
+           [quo/text {}
+            (i18n/label :t/invite-privacy-policy1)
+            " "
+            [quo/text {:color    :link
+                       :on-press #(re-frame/dispatch [::events/terms-and-conditions])}
+             (i18n/label :t/invite-privacy-policy2)]]]]
          [toolbar/toolbar
           {:show-border? true
            :center
