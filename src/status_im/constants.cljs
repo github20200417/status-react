@@ -15,8 +15,8 @@
 (def content-type-command 5)
 (def content-type-system-text 6)
 (def content-type-image 7)
-(def content-type-emoji-reaction 8)
-(def content-type-emoji-reaction-retraction 8)
+(def content-type-emoji-reaction 9)
+(def content-type-emoji-reaction-retraction 10)
 
 (def emoji-reaction-love 1)
 (def emoji-reaction-thumbs-up  2)
