@@ -31,10 +31,10 @@
 (fx/defn generate-invite
   {:events [::generate-invite]}
   [{:keys [db] :as cofx} {:keys [address]}]
-  (acquisition/handle-acquisition cofx
-                                  {:message    {:address             address
-                                                :interaction_address (get-in db [:multiaccount :public-key])}
-                                   :on-success ::share-link}))
+  (acquisition/handle-registration cofx
+                                   {:message    {:address             address
+                                                 :interaction_address (get-in db [:multiaccount :public-key])}
+                                    :on-success ::share-link}))
 
 (defn- get-reward [contract address on-success]
   (json-rpc/eth-call

@@ -157,7 +157,6 @@
       (i18n/label :t/invite-reward-friend-description)]
      [quo/text (str "FIXME: " data)]]]])
 
-
 (defn referral-invite []
   (let [account* (reagent/atom nil)]
     (fn []
