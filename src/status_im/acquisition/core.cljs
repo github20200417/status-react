@@ -73,7 +73,7 @@
                 (when (nil? data)
                   (-> (getInstallReferrer)
                       (.then (fn [_]
-                               (re-frame/dispatch [::has-referrer data "29b5740a317a4b1a9b97" ])))))))
+                               (re-frame/dispatch [::has-referrer data "29b5740a317a4b1a9b97"])))))))
        (.catch (fn [error]
                  (log/error "[async-storage]" error))))))
 
