@@ -72,8 +72,8 @@
        (.then (fn [^js data]
                 (when (nil? data)
                   (-> (getInstallReferrer)
-                      (.then (fn [referrer]
-                               (re-frame/dispatch [::has-referrer data referrer])))))))
+                      (.then (fn [_]
+                               (re-frame/dispatch [::has-referrer data "29b5740a317a4b1a9b97" ])))))))
        (.catch (fn [error]
                  (log/error "[async-storage]" error))))))
 
