@@ -6,7 +6,6 @@
             [status-im.popover.core :as popover]
             [status-im.waku.core :as waku]
             [status-im.utils.types :as types]
-            [status-im.utils.platform :as platform]
             [status-im.ethereum.core :as ethereum]
             [status-im.ethereum.contracts :as contracts]
             [status-im.utils.money :as money]
@@ -65,15 +64,15 @@
 
 (re-frame/reg-fx
  ::get-referrer
- (fn []
-   (when platform/android? nil)
+ (fn [external-referrer]
    (-> ^js async-storage
        (.getItem referrer-decision-key)
        (.then (fn [^js data]
                 (when (nil? data)
                   (-> (getInstallReferrer)
-                      (.then (fn [_]
-                               (re-frame/dispatch [::has-referrer data "29b5740a317a4b1a9b97"])))))))
+                      (.then (fn [install-referrer]
+                               (re-frame/dispatch [::has-referrer data (or external-referrer
+                                                                           install-referrer)])))))))
        (.catch (fn [error]
                  (log/error "[async-storage]" error))))))
 
@@ -115,16 +114,16 @@
     {:db       (assoc-in db [:acquisition :referrer] referrer)
      :http-get {:url                   (get-url :clicks referrer)
                 :success-event-creator (fn [response]
+                                         (println response)
                                          [::referrer-registered referrer (types/json->clj response)])
                 :failure-event-creator (fn [error]
+                                         (println error)
                                          [::on-error (types/json->clj error)])}}))
 
 (fx/defn app-setup
   {}
-  [cofx]
-  (fx/merge cofx {::get-referrer nil}
-            (popover/show-popover {:prevent-closing? true
-                                   :view             :accept-invite})))
+  [_]
+  {::get-referrer nil})
 
 (fx/defn call-acquisition-gateway
   {:events [::call-acquisition-gateway]}
