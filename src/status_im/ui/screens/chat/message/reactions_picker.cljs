@@ -18,26 +18,29 @@
 (def translate-x   27)
 (def translate-y   -24)
 
-(defn picker [{:keys [outgoing actions on-close send-emoji]}]
-  [animated/view {:style (styles/container-style {:outgoing outgoing})}
+(defn picker [{:keys [outgoing actions own-reactions on-close send-emoji]}]
+  [rn/view {:style (styles/container-style {:outgoing outgoing})}
    [rn/view {:style (styles/reactions-picker-row)}
-    (for [[id resource] constants/reactions]
-      ^{:key id}
-      [rn/touchable-opacity {:on-press #(send-emoji id)
-                             :style    {:padding-vertical   6
-                                        :padding-horizontal 5}}
-       [rn/image {:source resource
-                  :style  {:height 32
-                           :width  32}}]])]
+    (doall
+     (for [[id resource] constants/reactions
+           :let          [active (own-reactions id)]]
+       ^{:key id}
+       [rn/touchable-opacity {:on-press #(when-not active
+                                           ;; TODO: Add retraction
+                                           (send-emoji id))}
+        [rn/view {:style (styles/reaction-button active)}
+         [rn/image {:source resource
+                    :style  {:height 32
+                             :width  32}}]]]))]
    [rn/view {:style (styles/quick-actions-row)}
     (for [action actions
           :let   [{:keys [label on-press]} (bean/bean action)]]
       ^{:key label}
-      [quo/button {:type     :secondary
-                   :on-press (fn []
-                               (on-close)
-                               (js/setTimeout on-press animation-duration))}
-       label])]])
+      [rn/touchable-opacity {:on-press (fn []
+                                         (on-close)
+                                         (js/setTimeout on-press animation-duration))}
+       [quo/button {:type :secondary}
+        label]])]])
 
 (def modal
   (reagent/adapt-react-class
@@ -51,6 +54,7 @@
             on-close       :onClose
             actions        :actions
             send-emoji     :sendEmoji
+            own-reactions  :ownReactions
             children       :children}
            (bean/bean props)
            {bottom-inset :bottom}  (safe-area/use-safe-area)
@@ -93,8 +97,9 @@
                                                   :transform [{:translateX (animated/mix spring translation-x 0)}
                                                               {:translateY (animated/mix spring translate-y 0)}
                                                               {:scale (animated/mix spring scale 1)}]})}
-           [picker {:outgoing   outgoing
-                    :actions    actions
-                    :on-close   on-close
-                    :send-emoji send-emoji
-                    :animation  animation}]]]])))))
+           [picker {:outgoing      outgoing
+                    :actions       actions
+                    :on-close      on-close
+                    :own-reactions (into #{} (js->clj own-reactions))
+                    :send-emoji    send-emoji
+                    :animation     animation}]]]])))))

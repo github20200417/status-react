@@ -44,7 +44,10 @@
                            (reset! position pos)
                            (reset! visible true))]
     (fn [{:keys [message render send-emoji]}]
-      (let [reactions @(re-frame/subscribe [:chats/message-reactions (:message-id message)])]
+      (let [reactions     @(re-frame/subscribe [:chats/message-reactions (:message-id message)])
+            own-reactions (reduce (fn [acc {:keys [emoji-id own]}]
+                                    (if own (conj acc emoji-id) acc))
+                                  [] reactions)]
         [:<>
          [animated/view {:style {:opacity (animated/mix animation 1 0)}}
           [rn/view {:ref         ref
@@ -65,10 +68,10 @@
                                   :animation      animation
                                   :spring         spring-animation
                                   :top            (:top @position)
-                                  :left           (:left @position)
                                   :message-height (:height @position)
                                   :on-close       on-close
                                   :actions        @actions
+                                  :own-reactions  own-reactions
                                   :send-emoji     (fn [emoji]
                                                     (on-close)
                                                     (js/setTimeout #(send-emoji emoji)

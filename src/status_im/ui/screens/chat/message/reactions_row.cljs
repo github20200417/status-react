@@ -15,7 +15,6 @@
     quantity]])
 
 (defn message-reactions [message reactions]
-  (println reactions)
   (when (pos? (count reactions))
     [rn/view {:style (styles/reactions-row message)}
      (for [emoji-reaction reactions]

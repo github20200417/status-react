@@ -14,7 +14,6 @@
       {:db (assoc-in db [:reactions-retractions chat-id message-id emoji_reaction_id] message)})))
 
 (defn reaction-message? [{:keys [content-type]}]
-  (println content-type)
   (#{constants/content-type-emoji-reaction
      constants/content-type-emoji-reaction-retraction}
    content-type))

@@ -29,8 +29,8 @@
 
 (defn reactions-picker-row []
   {:flex-direction     :row
-   :pading-vertical    6
-   :padding-horizontal 7})
+   :padding-vertical   8
+   :padding-horizontal 8})
 
 (defn quick-actions-row []
   {:flex-direction   :row
@@ -64,8 +64,25 @@
                   (:text-05 @colors/theme)
                   (:text-01 @colors/theme))})
 
-(defn reactions-row [{:keys [outgoing]}]
-  {:flex-direction  :row
-   :justify-content (if outgoing :flex-end :flex-start)
-   :padding-right   8
-   :padding-left    (+ 16 photos/default-size)})
+(defn reactions-row [{:keys [outgoing display-photo?]}]
+  (merge {:flex-direction :row
+          :padding-right  8}
+         (if outgoing
+           {:justify-content :flex-end}
+           {:justify-content :flex-start})
+         (if display-photo?
+           {:padding-left (+ 16 photos/default-size)}
+           {:padding-left 8})))
+
+(defn reaction-button [active]
+  (merge {:width             40
+          :height            40
+          :border-radius     20
+          :justify-content   :center
+          :align-items       :center
+          :margin-horizontal 1
+          :border-width      1
+          :border-color      (:ui-background @colors/theme)}
+         (when active
+           {:background-color (:interactive-02 @colors/theme)
+            :border-color     "rgba(67, 96, 223, 0.2)"})))

@@ -678,7 +678,7 @@
  (fn [reactions [_ message-id]]
    (mapv (fn [[emoji-id messages]]
            {:emoji-id emoji-id
-            :own      false ; FIXME
+            :own      (= 1 emoji-id) ; FIXME
             :quantity (count messages)})
          (get reactions message-id))))
 
