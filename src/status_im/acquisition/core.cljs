@@ -69,11 +69,11 @@
        (.getItem referrer-decision-key)
        (.then (fn [^js _]
                 (let [data nil]
-                 (when (nil? data)
-                   (-> (getInstallReferrer)
-                       (.then (fn [install-referrer]
-                                (re-frame/dispatch [::has-referrer data (or external-referrer
-                                                                            install-referrer)]))))))))
+                  (when (nil? data)
+                    (-> (getInstallReferrer)
+                        (.then (fn [install-referrer]
+                                 (re-frame/dispatch [::has-referrer data (or external-referrer
+                                                                             install-referrer)]))))))))
        (.catch (fn [error]
                  (log/error "[async-storage]" error))))))
 

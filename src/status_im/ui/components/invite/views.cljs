@@ -89,26 +89,26 @@
       ^{:key (str (:number s))}
       [step s])]])
 
+(defn bottom-sheet-content [accounts account change-account]
+  (fn []
+    [accounts-list accounts account (fn [a]
+                                      (re-frame/dispatch [:bottom-sheet/hide])
+                                      (change-account a))]))
+
 (defn- referral-account []
-  (let [visible (reagent/atom false)]
-    (fn [{:keys [account accounts change-account]}]
-      [rn/view {:style (:tiny spacing/padding-vertical)}
-       [rn/view {:style (merge (:base spacing/padding-horizontal)
-                               (:x-tiny spacing/padding-vertical))}
-        [quo/text {:color :secondary}
-         (i18n/label :t/invite-receive-account)]]
-       [rn/modal {:visible     @visible
-                  :transparent true}
-        [quo/bottom-sheet {:visible?  true
-                           :on-cancel #(reset! visible false)}
-         [accounts-list accounts account (fn [a]
-                                           (change-account a)
-                                           (reset! visible false))]]]
-       [quo/list-item
-        {:icon     [chat-icon/custom-icon-view-list (:name account) (:color account)]
-         :title    (:name account)
-         :subtitle (utils/get-shortened-checksum-address (:address account))
-         :on-press #(reset! visible true)}]])))
+  (fn [{:keys [account accounts change-account]}]
+    [rn/view {:style (:tiny spacing/padding-vertical)}
+     [rn/view {:style (merge (:base spacing/padding-horizontal)
+                             (:x-tiny spacing/padding-vertical))}
+      [quo/text {:color :secondary}
+       (i18n/label :t/invite-receive-account)]]
+     [quo/list-item
+      {:icon     [chat-icon/custom-icon-view-list (:name account) (:color account)]
+       :title    (:name account)
+       :subtitle (utils/get-shortened-checksum-address (:address account))
+       :on-press #(re-frame/dispatch
+                   [:bottom-sheet/show-sheet
+                    {:content (bottom-sheet-content accounts account change-account)}])}]]))
 
 (defn reward-item [data]
   [rn/view {}
