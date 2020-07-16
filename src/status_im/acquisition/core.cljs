@@ -67,13 +67,14 @@
  (fn [external-referrer]
    (-> ^js async-storage
        (.getItem referrer-decision-key)
-       (.then (fn [^js _]
-                (let [data nil]
-                  (when (nil? data)
+       (.then (fn [^js data]
+                (when (nil? data)
+                  (if external-referrer
+                    (re-frame/dispatch [::has-referrer data external-referrer])
                     (-> (getInstallReferrer)
                         (.then (fn [install-referrer]
-                                 (re-frame/dispatch [::has-referrer data (or external-referrer
-                                                                             install-referrer)]))))))))
+                                 (when-not (= install-referrer "unknown")
+                                   (re-frame/dispatch [::has-referrer data install-referrer])))))))))
        (.catch (fn [error]
                  (log/error "[async-storage]" error))))))
 
@@ -115,11 +116,9 @@
     {:db       (assoc-in db [:acquisition :referrer] referrer)
      :http-get {:url                   (get-url :clicks referrer)
                 :success-event-creator (fn [response]
-                                         (println response)
                                          [::referrer-registered referrer (types/json->clj response)])
                 :failure-event-creator (fn [error]
-                                         (println error)
-                                         [::on-error (types/json->clj error)])}}))
+                                         [::on-error (:error (types/json->clj error))])}}))
 
 (fx/defn app-setup
   {}
@@ -148,7 +147,6 @@
 (fx/defn get-starter-pack-amount
   {:events [::starter-pack-amount]}
   [{:keys [db]} [_ eth-amount tokens tokens-amount sticker-packs]]
-  ;; TODO: Fetch all tokens names and symbols
   {:db (assoc-in db [:acquisition :starter-pack :pack]
                  {:eth-amount    (money/wei->ether eth-amount)
                   :tokens        tokens
