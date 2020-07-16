@@ -14,6 +14,7 @@
             [status-im.ui.components.invite.events :as events]
             [status-im.acquisition.core :as acquisition]
             [status-im.react-native.resources :as resources]
+            [status-im.utils.config :as config]
             [quo.react-native :as rn]))
 
 ;; Select account sheet
@@ -192,37 +193,53 @@
             (i18n/label :t/invite-button)]}]]))))
 
 (defn button []
-  (let [reward @(re-frame/subscribe [::events/default-reward])]
+  (if-not config/referrals-invite-enabled?
     [rn/view {:style {:align-items :center}}
      [rn/view {:style (:tiny spacing/padding-vertical)}
-      [quo/button {:on-press            #(re-frame/dispatch [::events/open-invite])
+      [quo/button {:on-press            #(re-frame/dispatch [::events/share-link nil])
                    :accessibility-label :invite-friends-button}
-       (i18n/label :t/invite-friends)]]
-     [rn/view {:style (merge (:tiny spacing/padding-vertical)
-                             (:base spacing/padding-horizontal))}
-      (when reward
-        [rn/view {:style {:flex-direction  :row
-                          :align-items     :center
-                          :justify-content :center}}
-         [rn/view {:style (:tiny spacing/padding-horizontal)}
-          (when-let [{:keys [source]} (tokens/symbol->icon :SNT)]
-            [rn/image {:style  {:width  20
-                                :height 20}
-                       :source (source)}])]
-         [quo/text {:align :center}
-          (i18n/label :t/invite-reward {:value (money/wei->str :eth (get reward :eth-amount) "ETH")})]])]]))
+       (i18n/label :t/invite-friends)]]]
+    (let [reward @(re-frame/subscribe [::events/default-reward])]
+      [rn/view {:style {:align-items :center}}
+       [rn/view {:style (:tiny spacing/padding-vertical)}
+        [quo/button {:on-press            #(re-frame/dispatch [::events/open-invite])
+                     :accessibility-label :invite-friends-button}
+         (i18n/label :t/invite-friends)]]
+       [rn/view {:style (merge (:tiny spacing/padding-vertical)
+                               (:base spacing/padding-horizontal))}
+        (when reward
+          [rn/view {:style {:flex-direction  :row
+                            :align-items     :center
+                            :justify-content :center}}
+           [rn/view {:style (:tiny spacing/padding-horizontal)}
+            (when-let [{:keys [source]} (tokens/symbol->icon :SNT)]
+              [rn/image {:style  {:width  20
+                                  :height 20}
+                         :source (source)}])]
+           [quo/text {:align :center}
+            (i18n/label :t/invite-reward {:value (money/wei->str :eth (get reward :eth-amount) "ETH")})]])]])))
 
 (defn list-item [{:keys [accessibility-label]}]
-  (let [amount @(re-frame/subscribe [::events/default-reward])]
+  (if-not config/referrals-invite-enabled?
     [quo/list-item
      {:theme               :accent
       :title               (i18n/label :t/invite-friends)
-      :subtitle            (i18n/label :t/invite-reward {:value (money/wei->str :eth amount "SNT")})
       :icon                :main-icons/share
       :accessibility-label accessibility-label
-      :on-press            #(do
-                              (re-frame/dispatch [:bottom-sheet/hide])
-                              (re-frame/dispatch [::events/open-invite]))}]))
+      :on-press            (fn []
+                             (re-frame/dispatch [:bottom-sheet/hide])
+                             (js/setTimeout
+                              #(re-frame/dispatch [::events/share-link nil]) 250))}]
+    (let [amount @(re-frame/subscribe [::events/default-reward])]
+      [quo/list-item
+       {:theme               :accent
+        :title               (i18n/label :t/invite-friends)
+        :subtitle            (i18n/label :t/invite-reward {:value (money/wei->str :eth amount "SNT")})
+        :icon                :main-icons/share
+        :accessibility-label accessibility-label
+        :on-press            #(do
+                                (re-frame/dispatch [:bottom-sheet/hide])
+                                (re-frame/dispatch [::events/open-invite]))}])))
 
 
 

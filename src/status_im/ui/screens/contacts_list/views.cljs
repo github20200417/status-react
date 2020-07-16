@@ -53,7 +53,7 @@
         [react/view {:align-items :center :flex 1 :justify-content :center}
          [react/text {:style {:color colors/gray :margin-vertical 24}}
           (i18n/label :t/you-dont-have-contacts)]
-         [invite/button]]])]))
+         [invite/button]])]]))
 
 (defview blocked-users-list []
   (letsubs [blocked-contacts [:contacts/blocked]]

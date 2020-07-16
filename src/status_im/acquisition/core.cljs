@@ -73,7 +73,8 @@
                     (re-frame/dispatch [::has-referrer data external-referrer])
                     (-> (getInstallReferrer)
                         (.then (fn [install-referrer]
-                                 (when-not (= install-referrer "unknown")
+                                 (when (and (seq install-referrer)
+                                            (not= install-referrer "unknown"))
                                    (re-frame/dispatch [::has-referrer data install-referrer])))))))))
        (.catch (fn [error]
                  (log/error "[async-storage]" error))))))

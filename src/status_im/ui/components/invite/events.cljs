@@ -24,7 +24,9 @@
         invite-id                           (get response :invite_code)
         profile-link                        (universal-links/generate-link :user :external
                                                                            (or preferred-name public-key))
-        share-link                          (str profile-link "?invite=" invite-id)
+        share-link                          (cond-> profile-link
+                                              invite-id
+                                              (str "?invite=" invite-id))
         message                             (str "Hey join me on Status: " share-link)]
     {::share {:message message}}))
 
