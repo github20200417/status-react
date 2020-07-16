@@ -82,6 +82,9 @@ in stdenv.mkDerivation rec {
   # Used by the Android Gradle build script in android/build.gradle
   STATUS_GO_ANDROID_LIBDIR = "${status-go}";
 
+  # Fixes issue with failing to load libnative-platform.so
+  GRADLE_USER_HOME = "/tmp";
+
   phases = [
     "unpackPhase" "secretsPhase" "secretsCheckPhase"
     "keystorePhase" "buildPhase" "checkPhase" "installPhase"
@@ -136,6 +139,11 @@ in stdenv.mkDerivation rec {
     assert ANDROID_ABI_SPLIT != null && ANDROID_ABI_SPLIT != "";
     assert stringLength ANDROID_ABI_INCLUDE > 0;
   ''
+    ls -l / | grep tmp
+    ls -l $GRADLE_USER_HOME
+    touch $GRADLE_USER_HOME/test-file
+    ls -l $GRADLE_USER_HOME/test-file
+
     pushd ./android
     ${adhocEnvVars} ${pkgs.gradle}/bin/gradle \
       ${toString gradleOpts} \
