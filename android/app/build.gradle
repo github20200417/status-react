@@ -92,10 +92,10 @@ project.ext.react = [
 //     exclude group: 'com.facebook.react', module: 'react-native'
 // }
 
-if (project.gradle.startParameter.taskNames != ["clean"]) {
-  apply from: project(':react-native-config').projectDir.getPath() + "/dotenv.gradle"
-  apply from: project(':react-native-config').projectDir.getPath() + "/react.gradle"
-}
+//if (project.gradle.startParameter.taskNames != ["clean"]) {
+apply from: project(':react-native-config').projectDir.getPath() + "/dotenv.gradle"
+apply from: "../../node_modules/react-native/react.gradle"
+//}
 
 /**
  * Run Proguard to shrink the Java bytecode in release builds.
