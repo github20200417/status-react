@@ -1,5 +1,6 @@
 (ns status-im.acquisition.core
-  (:require [re-frame.core :as re-frame]
+  (:require [clojure.string :as cstr]
+            [re-frame.core :as re-frame]
             [reagent.ratom :refer [make-reaction]]
             [status-im.utils.fx :as fx]
             [status-im.ethereum.json-rpc :as json-rpc]
@@ -24,6 +25,31 @@
   (if (= type :clicks)
     (str (get acquisition-routes :clicks) "/" referral)
     (get acquisition-routes :registrations)))
+
+(defn- split-param [param]
+  (->
+   (cstr/split param #"=")
+   (concat (repeat ""))
+   (->>
+    (take 2))))
+
+(defn- url-decode
+  [string]
+  (some-> string str (cstr/replace #"\+" "%20") (js/decodeURIComponent)))
+
+(defn- query->map
+  [qstr]
+  (when-not (cstr/blank? qstr)
+    (some->> (cstr/split qstr #"&")
+             seq
+             (mapcat split-param)
+             (map url-decode)
+             (apply hash-map))))
+
+(defn parse-referrer
+  "Google return query params for referral with all utm tags"
+  [referrer]
+  (-> referrer query->map (get "referrer")))
 
 (def referrer-decision-key "referrer-decision")
 
@@ -73,9 +99,9 @@
                     (re-frame/dispatch [::has-referrer data external-referrer])
                     (-> (getInstallReferrer)
                         (.then (fn [install-referrer]
-                                 (when (and (seq install-referrer)
+                                 (when (and (seq (parse-referrer install-referrer))
                                             (not= install-referrer "unknown"))
-                                   (re-frame/dispatch [::has-referrer data install-referrer])))))))))
+                                   (re-frame/dispatch [::has-referrer data  (parse-referrer install-referrer)])))))))))
        (.catch (fn [error]
                  (log/error "[async-storage]" error))))))
 
