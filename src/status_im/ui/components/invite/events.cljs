@@ -8,7 +8,8 @@
             [status-im.ui.components.react :as react]
             [status-im.navigation :as navigation]
             [status-im.utils.universal-links.core :as universal-links]
-            [status-im.acquisition.core :as acquisition]))
+            [status-im.acquisition.core :as acquisition]
+            [status-im.utils.money :as money]))
 
 (def privacy-policy-link "get.status.im")
 
@@ -59,6 +60,7 @@
 (re-frame/reg-fx
  ::get-rewards
  (fn [accounts]
+   (println accounts)
    (doseq [{:keys [contract address on-success]} accounts]
      (get-reward contract address on-success))))
 
@@ -67,23 +69,23 @@
   [{:keys [db]} type data]
   (if (= :reward type)
     (let [[eth-amount tokens-count max-threshold attrib-count] data]
-      {:db (assoc-in db [:acquisition :referral-reward] {:eth-amount    eth-amount
+      {:db (assoc-in db [:acquisition :referral-reward] {:eth-amount    (money/wei->ether eth-amount)
                                                          :tokens-count  tokens-count
                                                          :max-threshold max-threshold
                                                          :attrib-count  attrib-count})})
     (let [[address amount] data]
-      {:db (assoc-in db [:acquisition :referral-reward :tokens address] amount)})))
+      {:db (assoc-in db [:acquisition :referral-reward :tokens address] (money/wei->ether amount))})))
 
 (fx/defn get-reward-success
   {:events [::get-reward-success]}
   [{:keys [db]} account type data]
   (if (= :reward type)
     (let [[eth-amount _ max-threshold attrib-count] data]
-      {:db (assoc-in db [:acquisition :accounts account] {:eth-amount    eth-amount
+      {:db (assoc-in db [:acquisition :accounts account] {:eth-amount    (money/wei->ether eth-amount)
                                                           :max-threshold max-threshold
                                                           :attrib-count  attrib-count})})
     (let [[address amount] data]
-      {:db (assoc-in db [:acquisition :accounts account :tokens address] amount)})))
+      {:db (assoc-in db [:acquisition :accounts account :tokens address] (money/wei->ether amount))})))
 
 (fx/defn get-default-reward
   {:events [::get-default-reward]}
@@ -100,6 +102,17 @@
    (make-reaction
     (fn []
       (get-in @db [:acquisition :referral-reward])))))
+
+(re-frame/reg-sub
+ :invite/accounts-reward
+ (fn [db]
+   (get-in db [:acquisition :accounts])))
+
+(re-frame/reg-sub
+ :invite/account-reward
+ :<- [:invite/accounts-reward]
+ (fn [accounts [_ account]]
+   (get accounts account)))
 
 (fx/defn go-to-invite
   {:events [::open-invite]}

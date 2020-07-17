@@ -5,7 +5,7 @@
             [quo.core :as quo]
             [status-im.i18n :as i18n]
             [status-im.ui.components.invite.events :as invite]
-            [status-im.ui.components.colors :as colors]
+            [quo.design-system.colors :as colors]
             [status-im.acquisition.core :as acquisition]))
 
 (defn perk [{name             :name
@@ -25,30 +25,43 @@
                :weight :medium}
      name]]])
 
+(defn token-icon-style [idx]
+  {:align-items    :center
+   :shadow-radius  16
+   :shadow-opacity 1
+   :shadow-color   (:shadow-01 @colors/theme)
+   :shadow-offset  {:width 0 :height 4}
+   :width          40
+   :height         40
+   :border-radius  20
+   :left           (* idx -20)})
+
 (defn accept-popover []
   (fn []
     (let [starter-pack-amount @(re-frame/subscribe [::acquisition/starter-pack])
           all-tokens          @(re-frame/subscribe [:wallet/all-tokens])
+          chain               @(re-frame/subscribe [:ethereum/chain-keyword])
           tokens              (->> (get starter-pack-amount :tokens)
                                    (map #(tokens/address->token all-tokens %))
-                                   ;; TODO: Addatch ETH
+                                   (into [(get tokens/all-native-currencies chain)])
                                    (mapv (fn [v i k] [k v i])
-                                         (get starter-pack-amount :tokens-amount)
+                                         (into [(:eth-amount starter-pack-amount)]
+                                               (get starter-pack-amount :tokens-amount))
                                          (range)))]
       [rn/view
        [rn/view {:style {:align-items        :center
                          :padding-vertical   16
                          :padding-horizontal 16}}
         [rn/view {:flex-direction :row
-                  :padding-left   20
-                  :height         40}
+                  :height         40
+                  :left           10}
          (for [[{name             :name
                  {source :source} :icon} _ i] tokens]
            ^{:key name}
-           [rn/image {:source (if (fn? source) (source) source)
-                      :style  {:width  40
-                               :height 40
-                               :left   (* i -20)}}])]
+           [rn/view {:style (token-icon-style i)}
+            [rn/image {:source (if (fn? source) (source) source)
+                       :style  {:width  40
+                                :height 40}}]])]
         [rn/view {:style {:padding 8}}
          [quo/text {:style {:margin-bottom 8}
                     :align :center
@@ -58,7 +71,7 @@
           (i18n/label :t/advertiser-starter-pack-description)]]
         [rn/view {:style {:border-radius      8
                           :border-width       1
-                          :border-color       colors/gray-lighter
+                          :border-color       (:ui-02 @colors/theme)
                           :width              "100%"
                           :margin-vertical    8
                           :padding-vertical   8
@@ -76,7 +89,9 @@
          [quo/text {:color :secondary
                     :align :center
                     :size  :small}
-          (i18n/label :t/invite-privacy-policy1)
-          [quo/text {:color    :link
-                     :on-press #(re-frame/dispatch [::invite/terms-and-conditions])}
-           (i18n/label :t/invite-privacy-policy2)]]]]])))
+          (i18n/label :t/invite-privacy-policy1)]
+         [quo/text {:color    :link
+                    :align    :center
+                    :size     :small
+                    :on-press #(re-frame/dispatch [::invite/terms-and-conditions])}
+          (i18n/label :t/invite-privacy-policy2)]]]])))

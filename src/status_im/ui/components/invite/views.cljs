@@ -7,21 +7,34 @@
             [status-im.utils.utils :as utils]
             [status-im.i18n :as i18n]
             [status-im.ethereum.tokens :as tokens]
-            [status-im.utils.money :as money]
             [quo.design-system.spacing :as spacing]
             [quo.design-system.colors :as colors]
+            [status-im.ui.components.invite.style :as styles]
             [status-im.ui.components.topbar :as topbar]
             [status-im.ui.components.invite.events :as events]
             [status-im.acquisition.core :as acquisition]
-            [status-im.react-native.resources :as resources]
             [status-im.utils.config :as config]
-            [quo.react-native :as rn]))
+            [quo.react-native :as rn]
+            [clojure.string :as cstr]))
+
+(defn- threshold-badge [max-threshold attrib-count]
+  (when (pos? max-threshold)
+    [rn/view {:flex-direction :row}
+     [rn/view {:padding-horizontal 8
+               :padding-vertical   2
+               :border-radius      11
+               :background-color   (:interactive-01 @colors/theme)}
+      [quo/text {:weight :medium
+                 :size   :small
+                 :color  :inverse}
+       (i18n/label :t/attribution-received {:max    max-threshold
+                                            :attrib attrib-count})]]]))
 
 ;; Select account sheet
 (defn- render-account [current-account change-account]
   (fn [account]
     (let [{:keys [max-threshold attrib-count]}
-          @(re-frame/subscribe [:invite/account-reward account])]
+          @(re-frame/subscribe [:invite/account-reward (:address account)])]
       [quo/list-item
        {:theme     :accent
         :active    (= (:address current-account) (:address account))
@@ -30,7 +43,11 @@
         :accessory :radio
         :icon      [chat-icon/custom-icon-view-list (:name account) (:color account)]
         :title     (:name account)
-        :subtitle  (utils/get-shortened-checksum-address (:address account))
+        :subtitle  [:<>
+                    [quo/text {:monospace true
+                               :color     :secondary}
+                     (utils/get-shortened-checksum-address (:address account))]
+                    [threshold-badge max-threshold attrib-count]]
         :on-press  #(change-account account)}])))
 
 (defn- accounts-list [accounts current-account change-account]
@@ -98,65 +115,85 @@
 
 (defn- referral-account []
   (fn [{:keys [account accounts change-account]}]
-    [rn/view {:style (:tiny spacing/padding-vertical)}
-     [rn/view {:style (merge (:base spacing/padding-horizontal)
-                             (:x-tiny spacing/padding-vertical))}
-      [quo/text {:color :secondary}
-       (i18n/label :t/invite-receive-account)]]
-     [quo/list-item
-      {:icon     [chat-icon/custom-icon-view-list (:name account) (:color account)]
-       :title    (:name account)
-       :subtitle (utils/get-shortened-checksum-address (:address account))
-       :on-press #(re-frame/dispatch
-                   [:bottom-sheet/show-sheet
-                    {:content (bottom-sheet-content accounts account change-account)}])}]]))
+    (let [{:keys [max-threshold attrib-count]}
+          @(re-frame/subscribe [:invite/account-reward (:address account)])]
+      [rn/view {:style (:tiny spacing/padding-vertical)}
+       [rn/view {:style (merge (:base spacing/padding-horizontal)
+                               (:x-tiny spacing/padding-vertical))}
+        [quo/text {:color :secondary}
+         (i18n/label :t/invite-receive-account)]]
+       [quo/list-item
+        {:icon     [chat-icon/custom-icon-view-list (:name account) (:color account)]
+         :title    (:name account)
+         :subtitle [:<>
+                    [quo/text {:monospace true
+                               :color     :secondary}
+                     (utils/get-shortened-checksum-address (:address account))]
+                    [threshold-badge max-threshold attrib-count]]
+         :on-press #(re-frame/dispatch
+                     [:bottom-sheet/show-sheet
+                      {:content (bottom-sheet-content accounts account change-account)}])}]])))
 
 (defn reward-item [data]
-  [rn/view {}
-   [rn/view {:style {:padding-horizontal 16
-                     :padding-top        12
-                     :padding-bottom     4}}
-    [quo/text {:weight :medium}
-     [quo/text {:color  :link
-                :weight :inherit}
-      (i18n/label :t/invite-reward-you)]
-     (i18n/label :t/invite-reward-you-name)]]
-   [rn/view {:style {:background-color    (:interactive-02 @colors/theme)
-                     :padding             16
-                     :flex-direction      :row
-                     :border-bottom-width 1
-                     :border-top-width    1
-                     :border-color        (:border-02 @colors/theme)}}
-    [rn/view {:style {:padding-right 16}}
-     [rn/image {:source (resources/get-image :referral-bonus)}]]
-    [rn/view
-     [quo/text {}
-      (i18n/label :t/invite-reward-you-description)]
-     [quo/text
-      (str "FIXME: " data)]]]])
+  (let [all-tokens  @(re-frame/subscribe [:wallet/all-tokens])
+        tokens      (map-indexed (fn [idx [k v]]
+                                   [(tokens/address->token all-tokens k) v idx])
+                                 (get data :tokens))
+        reward-text (cstr/join ", " (map (fn [[{:keys [symbol]} value _]]
+                                           (str value " " (name symbol)))
+                                         tokens))]
+    [rn/view {}
+     [rn/view {:style styles/reward-item-title}
+      [quo/text {:weight :medium}
+       [quo/text {:color  :link
+                  :weight :inherit}
+        (i18n/label :t/invite-reward-you)]
+       (i18n/label :t/invite-reward-you-name)]]
+     [rn/view {:style (styles/reward-item-content)}
+      [rn/view {:style {:padding-right 16}}
+       (doall
+        (for [[{name             :name
+                {source :source} :icon} _ idx] tokens]
+          ^{:key name}
+          [rn/view {:style (styles/reward-token-icon idx)}
+           [rn/image {:source (if (fn? source) (source) source)
+                      :style  {:width  40
+                               :height 40}}]]))]
+      [rn/view {:style styles/reward-description}
+       [quo/text {}
+        (i18n/label :t/invite-reward-you-description {:reward reward-text})]]]]))
 
-(defn friend-reward-item [data]
-  [rn/view {}
-   [rn/view {:style {:padding-horizontal 16
-                     :padding-top        12
-                     :padding-bottom     4}}
-    [quo/text {:weight :medium}
-     [quo/text {:color  :link
-                :weight :inherit}
-      (i18n/label :t/invite-reward-friend)]
-     (i18n/label :t/invite-reward-friend-name)]]
-   [rn/view {:style {:background-color    (:interactive-02 @colors/theme)
-                     :padding             16
-                     :flex-direction      :row
-                     :border-bottom-width 1
-                     :border-top-width    1
-                     :border-color        (:border-02 @colors/theme)}}
-    [rn/view {:style {:padding-right 16}}
-     [rn/image {:source (resources/get-image :referral-bonus)}]]
-    [rn/view
-     [quo/text {}
-      (i18n/label :t/invite-reward-friend-description)]
-     [quo/text (str "FIXME: " data)]]]])
+(defn friend-reward-item [starter-pack-amount]
+  (let [all-tokens  @(re-frame/subscribe [:wallet/all-tokens])
+        chain       @(re-frame/subscribe [:ethereum/chain-keyword])
+        tokens      (->> (get starter-pack-amount :tokens)
+                         (map #(tokens/address->token all-tokens %))
+                         (into [(get tokens/all-native-currencies chain)])
+                         (mapv (fn [v i k] [k v i])
+                               (into [(:eth-amount starter-pack-amount)]
+                                     (get starter-pack-amount :tokens-amount))
+                               (range)))
+        reward-text (cstr/join ", " (map (comp name :symbol first) tokens))]
+    [rn/view {}
+     [rn/view {:style styles/reward-item-title}
+      [quo/text {:weight :medium}
+       [quo/text {:color  :link
+                  :weight :inherit}
+        (i18n/label :t/invite-reward-friend)]
+       (i18n/label :t/invite-reward-friend-name)]]
+     [rn/view {:style (styles/reward-item-content)}
+      [rn/view {:style {:padding-right 16}}
+       (doall
+        (for [[{name             :name
+                {source :source} :icon} _ idx] tokens]
+          ^{:key name}
+          [rn/view {:style (styles/reward-token-icon idx)}
+           [rn/image {:source (if (fn? source) (source) source)
+                      :style  {:width  40
+                               :height 40}}]]))]
+      [rn/view {:style styles/reward-description}
+       [quo/text {}
+        (i18n/label :t/invite-reward-friend-description {:reward reward-text})]]]]))
 
 (defn referral-invite []
   (let [account* (reagent/atom nil)]
@@ -177,7 +214,8 @@
                              :change-account #(reset! account* %)
                              :accounts       accounts}]
           [referral-steps]
-          [rn/view {:padding-vertical 10}
+          [rn/view {:padding-vertical   10
+                    :padding-horizontal 16}
            [quo/text {}
             (i18n/label :t/invite-privacy-policy1)
             " "
@@ -217,7 +255,7 @@
                                   :height 20}
                          :source (source)}])]
            [quo/text {:align :center}
-            (i18n/label :t/invite-reward {:value (money/wei->str :eth (get reward :eth-amount) "ETH")})]])]])))
+            (i18n/label :t/invite-reward {:value  (str (get reward :eth-amount) " ETH")})]])]])))
 
 (defn list-item [{:keys [accessibility-label]}]
   (if-not config/referrals-invite-enabled?
@@ -234,7 +272,7 @@
       [quo/list-item
        {:theme               :accent
         :title               (i18n/label :t/invite-friends)
-        :subtitle            (i18n/label :t/invite-reward {:value (money/wei->str :eth amount "SNT")})
+        :subtitle            (i18n/label :t/invite-reward {:value (str (get amount :eth-amount) " ETH")})
         :icon                :main-icons/share
         :accessibility-label accessibility-label
         :on-press            #(do
